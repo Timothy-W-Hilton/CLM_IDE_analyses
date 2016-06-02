@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 from clm_domain import CLM_Domain, Location
 
+
 class CLM_spinup_analyzer(object):
     """class to read CLM spinup output and plot key variables
     """
@@ -114,22 +115,39 @@ def parse_CLM_f05_g15():
     return (CLM_f05_g16, fpsn)
 
 
+def plot_laugh_test_map(fpsn, santacruz):
+    """plot one month of spinup run GPP and Santa Cruz, CA
+
+    This is a quick 'laugh test' just to make sure the GPP spatial
+    placement actually looks like the continents and that the grid
+    indices of Santa Cruz are correct
+    """
+    fig, ax = plt.subplots()
+    ax.pcolormesh(fpsn[100, ...], cmap=plt.get_cmap('Greens'))
+    ax.scatter(santacruz.clm_x, santacruz.clm_y, c='black', marker='x', s=40)
+    return fig, ax
+
+
+def plot_monthly_timeseries(spinup_run, data, santacruz):
+    months = range(3, 10)
+    fig, ax = plt.subplots(nrows=len(months))
+    ax[0].set_title('Santa Cruz GPP (umol m-2 s-1)')
+    for i, this_month in enumerate(months):
+        idx = np.array([this_file.find('{:02d}.nc'.format(this_month))
+                        for this_file in spinup_run.all_files]) > 0
+        ax[i].plot(fpsn[idx, santacruz.clm_y, santacruz.clm_x])
+        ax[i].set_ylabel('GPP')
+        ax[i].xaxis.set_major_formatter(plt.NullFormatter())
+    ax[i].xaxis.set_major_formatter(plt.ScalarFormatter())
+    ax[-1].set_xlabel('year of spinup')
+    return(fig, ax)
 
 if __name__ == "__main__":
 
     CLM_f05_g16, fpsn = parse_CLM_f05_g15()
-    idx_jul = np.array([this_file.find('07.nc')
-                        for this_file in CLM_f05_g16.all_files]) > 0
     domain_f05_g16 = CLM_Domain(CLM_f05_g16.all_files[0])
     santacruz = Location((-122.03089741, ), (36.9741, ))
     santacruz.clm_y, santacruz.clm_x = domain_f05_g16.find_nearest_xy(
         santacruz.lon,
         santacruz.lat)
-    fig, ax = plt.subplots()
-    ax.pcolormesh(fpsn[100, ...], cmap=plt.get_cmap('Greens'))
-    ax.scatter(santacruz.clm_x, santacruz.clm_y, c='black', marker='x', s=40)
-    fig, ax = plt.subplots()
-    ax.plot(fpsn[idx_jul, santacruz.clm_y, santacruz.clm_x])
-    ax.set_title('July Santa Cruz GPP (umol m-2 s-1)')
-    ax.set_xlabel('year of spinup')
-    ax.set_ylabel('GPP')
+    plot_monthly_timeseries(CLM_f05_g16, fpsn, santacruz)
