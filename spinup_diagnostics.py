@@ -43,6 +43,7 @@ class CLM_spinup_analyzer(object):
                   varname,
                   lon_idx=None,
                   lat_idx=None,
+                  soil_lev=None,
                   mask_missing=True,
                   verbose=False):
         """parse a specified variable from all spinup files.
@@ -56,6 +57,8 @@ class CLM_spinup_analyzer(object):
             cell will be parsed.  Ignored if lat_idx is not also specified.
         lat_idx (integer): optional; if specified only a single grid
             cell will be parsed
+        soil_lev (integer): optional, if specified, indicates that the
+            variable is a soil variable and a soil level is needed
         mask_missing ({True}|False): if True, check the requested
             netCDF variable for an attribute named "missing_value".
             If present, parse it and return a numpy masked array with
@@ -87,7 +90,13 @@ class CLM_spinup_analyzer(object):
             if verbose:
                 print 'parsing {}'.format(os.path.basename(self.all_files[i]))
             nc = netCDF4.Dataset(self.all_files[i])
-            data[i, ...] = nc.variables[varname][0, lat_idx, lon_idx]
+            if soil_lev is None:
+                # each file contains one timestep so the time index is
+                # always 0
+                data[i, ...] = nc.variables[varname][0, lat_idx, lon_idx]
+            else:
+                data[i, ...] = nc.variables[varname][0, soil_lev,
+                                                     lat_idx, lon_idx]
             # TODO: parse time here
             try:
                 missing_value = nc.variables[varname].missing_value
@@ -101,7 +110,7 @@ class CLM_spinup_analyzer(object):
         return data
 
 
-def parse_CLM_f05_g15():
+def parse_CLM_f05_g15(varname, soil_lev=None):
     """wrapper function to read data from CLM_f05_g16 spinup run
     """
     CLM_f05_g16 = CLM_spinup_analyzer(os.path.join('/', 'global',
@@ -112,8 +121,8 @@ def parse_CLM_f05_g15():
                                                    'lnd',
                                                    'hist'),
                                       'CLM_f05_g16')
-    fpsn = CLM_f05_g16.parse_var('FPSN', verbose=True)
-    return (CLM_f05_g16, fpsn)
+    data = CLM_f05_g16.parse_var(varname, soil_lev=soil_lev, verbose=True)
+    return (CLM_f05_g16, data)
 
 
 def plot_laugh_test_map(fpsn, santacruz):
@@ -141,7 +150,8 @@ def plot_monthly_timeseries(spinup_run, data, santacruz):
         ax_idx = np.unravel_index(i, ax.shape)
         idx = np.array([this_file.find('{:02d}.nc'.format(this_month))
                         for this_file in spinup_run.all_files]) > 0
-        ax[ax_idx].plot(fpsn[idx, santacruz.clm_y, santacruz.clm_x])
+        ax[ax_idx].plot(data[idx, santacruz.clm_y, santacruz.clm_x])
+        ax[ax_idx].set_ylabel('GPP')
         ax[ax_idx].xaxis.set_major_formatter(plt.NullFormatter())
         ax[ax_idx].set_ylabel('GPP')
         ax[ax_idx].annotate(calendar.month_abbr[this_month],
@@ -155,10 +165,20 @@ def plot_monthly_timeseries(spinup_run, data, santacruz):
 
 if __name__ == "__main__":
 
-    CLM_f05_g16, fpsn = parse_CLM_f05_g15()
+    CLM_f05_g16, fpsn = parse_CLM_f05_g15('FPSN')
+    CLM_f05_g16, H2OSOI = parse_CLM_f05_g15('H2OSOI', soil_lev=5)
     domain_f05_g16 = CLM_Domain(CLM_f05_g16.all_files[0])
     santacruz = Location((-122.03089741, ), (36.9741, ))
     santacruz.clm_y, santacruz.clm_x = domain_f05_g16.find_nearest_xy(
         santacruz.lon,
         santacruz.lat)
-    plot_monthly_timeseries(CLM_f05_g16, fpsn, santacruz)
+
+    fig, ax = plot_monthly_timeseries(CLM_f05_g16, fpsn, santacruz)
+    fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'CLM_f05_g16',
+                'spinup_gpp_santacruz.pdf'))
+    plt.close(fig)
+
+    fig, ax = plot_monthly_timeseries(CLM_f05_g16, H2OSOI, santacruz)
+    fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'CLM_f05_g16',
+                'spinup_H2OSOI_santacruz.pdf'))
+    plt.close(fig)
