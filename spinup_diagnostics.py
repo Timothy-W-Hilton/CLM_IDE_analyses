@@ -7,6 +7,7 @@ import numpy as np
 import os
 import glob
 import matplotlib.pyplot as plt
+import calendar
 
 from clm_domain import CLM_Domain, Location
 
@@ -129,17 +130,22 @@ def plot_laugh_test_map(fpsn, santacruz):
 
 
 def plot_monthly_timeseries(spinup_run, data, santacruz):
-    months = range(3, 10)
-    fig, ax = plt.subplots(nrows=len(months))
-    ax[0].set_title('Santa Cruz GPP (umol m-2 s-1)')
+    months = range(1, 13)
+    fig, ax = plt.subplots(ncols=2, nrows=np.int(np.ceil(len(months) / 2)))
+    ax[0, 0].set_title('Santa Cruz GPP (umol m-2 s-1)')
     for i, this_month in enumerate(months):
+        ax_idx = np.unravel_index(i, ax.shape)
         idx = np.array([this_file.find('{:02d}.nc'.format(this_month))
                         for this_file in spinup_run.all_files]) > 0
-        ax[i].plot(fpsn[idx, santacruz.clm_y, santacruz.clm_x])
-        ax[i].set_ylabel('GPP')
-        ax[i].xaxis.set_major_formatter(plt.NullFormatter())
-    ax[i].xaxis.set_major_formatter(plt.ScalarFormatter())
-    ax[-1].set_xlabel('year of spinup')
+        ax[ax_idx].plot(fpsn[idx, santacruz.clm_y, santacruz.clm_x])
+        ax[ax_idx].set_ylabel('GPP')
+        ax[ax_idx].xaxis.set_major_formatter(plt.NullFormatter())
+        ax[ax_idx].annotate(calendar.month_abbr[this_month],
+                            xycoords='axes fraction',
+                            xy=(0, 0),
+                            bbox=dict(boxstyle="round", fc="0.8"))
+    ax[ax_idx].xaxis.set_major_formatter(plt.ScalarFormatter())
+    ax[ax_idx].set_xlabel('year of spinup')
     return(fig, ax)
 
 if __name__ == "__main__":
