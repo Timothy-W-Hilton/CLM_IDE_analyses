@@ -19,9 +19,10 @@ class Location(object):
     """class to contain the location of a point.  Contains user-accessible
     fields lon and lat.
     """
-    def __init__(self, lon, lat):
+    def __init__(self, lon, lat, name):
         self.lon = lon
         self.lat = lat
+        self.name = name
 
 
 class CLM_Domain(object):
