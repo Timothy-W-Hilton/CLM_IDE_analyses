@@ -157,7 +157,7 @@ class CLM_spinup_analyzer(object):
         if missing_value is not None:
             data = np.ma.masked_values(data, missing_value)
         var.set_data(data)
-        return data
+        return var
 
 
 def parse_CLM_f05_g15(varname, soil_lev=None):
@@ -188,11 +188,29 @@ def plot_laugh_test_map(fpsn, santacruz):
     return fig, ax
 
 
-def plot_monthly_timeseries(spinup_run, data, santacruz):
+def plot_monthly_timeseries(spinup_run, var, location):
+    """12-panel plot: timeseries of each month from all spinup years
+
+    ARGS:
+    spinup_run (CLM_spinup_analyzer): object of class
+        CLM_spinup_analyzer describing the spinup run
+    var (CLM_var): object of class CLM_var containing the data and
+        metadata to be plotted
+    location (Location): object of class Location describing the
+        location of the data to be plotted
+    """
     months = range(1, 13)
     nrows = np.int(np.ceil(len(months) / 2))
     fig, ax = plt.subplots(ncols=2, nrows=nrows, figsize=(8.5, 11))
-    fig.text(0.5, 0.95, 'Santa Cruz GPP (umol m-2 s-1)',
+
+    if var.depth is not None:
+        depth_str = "{:0.2f} m".format(var.depth)
+    else:
+        depth_str = ""
+    fig.text(0.5, 0.95, '{} {} {} ({})'.format(location.name,
+                                               var.varname_long,
+                                               depth_str,
+                                               var.units),
              verticalalignment='top',
              horizontalalignment='center',
              size='large')
@@ -200,10 +218,9 @@ def plot_monthly_timeseries(spinup_run, data, santacruz):
         ax_idx = np.unravel_index(i, ax.shape)
         idx = np.array([this_file.find('{:02d}.nc'.format(this_month))
                         for this_file in spinup_run.all_files]) > 0
-        ax[ax_idx].plot(data[idx, santacruz.clm_y, santacruz.clm_x])
-        ax[ax_idx].set_ylabel('GPP')
+        ax[ax_idx].plot(var.data[idx, location.clm_y, location.clm_x])
+        ax[ax_idx].set_ylabel(var.varname)
         ax[ax_idx].xaxis.set_major_formatter(plt.NullFormatter())
-        ax[ax_idx].set_ylabel('GPP')
         ax[ax_idx].annotate(calendar.month_abbr[this_month],
                             xycoords='axes fraction',
                             xy=(0, 0),
@@ -215,20 +232,19 @@ def plot_monthly_timeseries(spinup_run, data, santacruz):
 
 if __name__ == "__main__":
 
-    CLM_f05_g16, fpsn = parse_CLM_f05_g15('FPSN')
-    CLM_f05_g16, H2OSOI = parse_CLM_f05_g15('H2OSOI', soil_lev=10)
+    # CLM_f05_g16, fpsn = parse_CLM_f05_g15('FPSN')
+    CLM_f05_g16, H2OSOI = parse_CLM_f05_g15('H2OSOI', soil_lev=7)
     domain_f05_g16 = CLM_Domain(CLM_f05_g16.all_files[0])
-    santacruz = Location((-122.03089741, ), (36.9741, ))
+    santacruz = Location((-122.03089741, ), (36.9741, ), 'Santa Cruz')
     santacruz.clm_y, santacruz.clm_x = domain_f05_g16.find_nearest_xy(
         santacruz.lon,
         santacruz.lat)
 
-    fig, ax = plot_monthly_timeseries(CLM_f05_g16, fpsn, santacruz)
-    fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'CLM_f05_g16',
-                'spinup_gpp_santacruz.pdf'))
-    plt.close(fig)
-
-    fig, ax = plot_monthly_timeseries(CLM_f05_g16, H2OSOI, santacruz)
-    fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'CLM_f05_g16',
-                'spinup_H2OSOI_santacruz.pdf'))
-    plt.close(fig)
+    for this_var in (H2OSOI, ):
+        fig, ax = plot_monthly_timeseries(CLM_f05_g16, this_var, santacruz)
+        fig.savefig(
+            os.path.join(os.getenv('HOME'),
+                         'plots',
+                         'CLM_f05_g16',
+                         'spinup_{}_santacruz.pdf'.format(this_var.varname)))
+        plt.close(fig)
