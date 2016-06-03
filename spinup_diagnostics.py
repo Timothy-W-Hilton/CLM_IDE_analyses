@@ -12,6 +12,45 @@ import calendar
 from clm_domain import CLM_Domain, Location
 
 
+class CLM_var(object):
+    """container class for a CLM output variable data and metadata
+    """
+
+    def __init__(self,
+                 varname="",
+                 varname_long=None,
+                 data=None,
+                 time=None,
+                 units="",
+                 depth=None,
+                 missing_value=1.0e36):
+        """
+        ARGS:
+        varname (string): the name of the variable in the netCDF output
+        varname_long (string): name of variable suitable for plotting
+        data (array-like): the data values
+        time (array-like): variable time stamps
+        units (string): the units for the variables
+        depth (float): soil depth in meters (if applicable)
+        """
+        self.varname = varname
+        self.varname_long = varname_long
+        self.data = data
+        self.time = time
+        self.units = units
+        self.depth = depth
+
+    def get_long_name(self):
+        """returns long name if provided; short name otherwise
+        """
+        if self.varname_long is not None:
+            return self.varname_long
+        else:
+            return self.varname
+
+    def set_data(self, data):
+        self.data = data
+
 class CLM_spinup_analyzer(object):
     """class to read CLM spinup output and plot key variables
     """
@@ -74,8 +113,18 @@ class CLM_spinup_analyzer(object):
         nt = len(self.all_files)
         nlon = 1
         nlat = 1
+        nc = netCDF4.Dataset(self.all_files[0])
+        soil_depth = None
+        if soil_lev is not None:
+            soil_depth = nc.variables['levgrnd'][soil_lev]
+        var = CLM_var(varname,
+                      varname_long=nc.variables[varname].long_name,
+                      units=nc.variables[varname].units,
+                      time=None,  # ignore for now
+                      depth=soil_depth,
+                      missing_value=nc.variables[varname].missing_value)
+
         if (lon_idx is None) or (lat_idx is None):
-            nc = netCDF4.Dataset(self.all_files[0])
             nlon = len(nc.dimensions['lon'])
             nlat = len(nc.dimensions['lat'])
             lon_idx = np.arange(nlon)
@@ -107,6 +156,7 @@ class CLM_spinup_analyzer(object):
             nc.close()
         if missing_value is not None:
             data = np.ma.masked_values(data, missing_value)
+        var.set_data(data)
         return data
 
 
@@ -166,7 +216,7 @@ def plot_monthly_timeseries(spinup_run, data, santacruz):
 if __name__ == "__main__":
 
     CLM_f05_g16, fpsn = parse_CLM_f05_g15('FPSN')
-    CLM_f05_g16, H2OSOI = parse_CLM_f05_g15('H2OSOI', soil_lev=5)
+    CLM_f05_g16, H2OSOI = parse_CLM_f05_g15('H2OSOI', soil_lev=10)
     domain_f05_g16 = CLM_Domain(CLM_f05_g16.all_files[0])
     santacruz = Location((-122.03089741, ), (36.9741, ))
     santacruz.clm_y, santacruz.clm_x = domain_f05_g16.find_nearest_xy(
