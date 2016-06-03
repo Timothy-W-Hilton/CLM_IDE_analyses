@@ -24,6 +24,17 @@ class Location(object):
         self.lat = lat
         self.name = name
 
+    def get_clm_xy(self, clm_domain):
+        """find the CLM grid cellccontaining location
+
+        place the nearest CLM grid cell x and y coordinates in
+        fields clm_x, clm_y
+        ARGS:
+        clm_domain (CLM_Domain object): description of the domain
+        """
+        self.clm_y, self.clm_x = clm_domain.find_nearest_xy(
+            self.lon,
+            self.lat)
 
 class CLM_Domain(object):
     """class to contain CLM domain attributes.
