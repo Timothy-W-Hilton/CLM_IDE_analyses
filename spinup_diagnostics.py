@@ -51,6 +51,23 @@ class CLM_var(object):
     def set_data(self, data):
         self.data = data
 
+    def get_plot_filename(self, location):
+        """generate a filename for a diagnostic plot
+
+        ARGS:
+        location: a Location instance or a string
+
+        constructs a file name containing the variable short name,
+        depth (if applicable), and location
+        """
+        var_str = self.varname
+        if self.depth is not None:
+            var_str = var_str + '_{:1.2f}m'.format(self.depth)
+        fname = 'spinup_{}_{}.pdf'.format(var_str,
+                                          location.name.replace(" ", ""))
+        return fname
+
+
 class CLM_spinup_analyzer(object):
     """class to read CLM spinup output and plot key variables
     """
@@ -106,6 +123,9 @@ class CLM_spinup_analyzer(object):
         verbose (True|{False}): if True, display a status message as
             each file is read
 
+        RETURNS:
+        a CLM_var instance containing the parsed data
+
         It is assumed that CLM output files contain one and only one
         timestep.
         """
@@ -137,7 +157,9 @@ class CLM_spinup_analyzer(object):
         missing_value = None
         for i in range(nt):
             if verbose:
-                print 'parsing {}'.format(os.path.basename(self.all_files[i]))
+                print 'parsing {} from {}'.format(
+                    varname,
+                    os.path.basename(self.all_files[i]))
             nc = netCDF4.Dataset(self.all_files[i])
             if soil_lev is None:
                 # each file contains one timestep so the time index is
@@ -160,19 +182,21 @@ class CLM_spinup_analyzer(object):
         return var
 
 
-def parse_CLM_f05_g15(varname, soil_lev=None):
+def parse_CLM_f05_g15(spinup_container, varname, soil_lev=None, location=None):
     """wrapper function to read data from CLM_f05_g16 spinup run
     """
-    CLM_f05_g16 = CLM_spinup_analyzer(os.path.join('/', 'global',
-                                                   'cscratch1', 'sd',
-                                                   'twhilton',
-                                                   'archive',
-                                                   'CLM_f05_g16',
-                                                   'lnd',
-                                                   'hist'),
-                                      'CLM_f05_g16')
-    data = CLM_f05_g16.parse_var(varname, soil_lev=soil_lev, verbose=True)
-    return (CLM_f05_g16, data)
+    if location is None:
+        clm_x = None
+        clm_y = None
+    else:
+        clm_x = location.clm_x
+        clm_y = location.clm_y
+    data = spinup_container.parse_var(varname,
+                                      soil_lev=soil_lev,
+                                      lon_idx=clm_x,
+                                      lat_idx=clm_y,
+                                      verbose=True)
+    return data
 
 
 def plot_laugh_test_map(fpsn, santacruz):
@@ -218,7 +242,7 @@ def plot_monthly_timeseries(spinup_run, var, location):
         ax_idx = np.unravel_index(i, ax.shape)
         idx = np.array([this_file.find('{:02d}.nc'.format(this_month))
                         for this_file in spinup_run.all_files]) > 0
-        ax[ax_idx].plot(var.data[idx, location.clm_y, location.clm_x])
+        ax[ax_idx].plot(var.data[idx, ...].squeeze())
         ax[ax_idx].set_ylabel(var.varname)
         ax[ax_idx].xaxis.set_major_formatter(plt.NullFormatter())
         ax[ax_idx].annotate(calendar.month_abbr[this_month],
@@ -230,21 +254,39 @@ def plot_monthly_timeseries(spinup_run, var, location):
         ax[nrows-1, this_col].set_xlabel('year of spinup')
     return(fig, ax)
 
-if __name__ == "__main__":
 
-    # CLM_f05_g16, fpsn = parse_CLM_f05_g15('FPSN')
-    CLM_f05_g16, H2OSOI = parse_CLM_f05_g15('H2OSOI', soil_lev=7)
+def plot_CLMf05g16_monthly_timeseries_main():
+    """plot FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI' at Santa Cruz, McLaughlin
+    """
+    CLM_f05_g16 = CLM_spinup_analyzer(os.path.join('/', 'global',
+                                                   'cscratch1', 'sd',
+                                                   'twhilton',
+                                                   'archive',
+                                                   'CLM_f05_g16',
+                                                   'lnd',
+                                                   'hist'),
+                                      'CLM_f05_g16')
     domain_f05_g16 = CLM_Domain(CLM_f05_g16.all_files[0])
     santacruz = Location((-122.03089741, ), (36.9741, ), 'Santa Cruz')
-    santacruz.clm_y, santacruz.clm_x = domain_f05_g16.find_nearest_xy(
-        santacruz.lon,
-        santacruz.lat)
+    santacruz.get_clm_xy(domain_f05_g16)
+    mclaughlin = Location((-122.431667, ), (38.873889, ), 'McLaughlin NRS')
+    mclaughlin.get_clm_xy(domain_f05_g16)
 
-    for this_var in (H2OSOI, ):
-        fig, ax = plot_monthly_timeseries(CLM_f05_g16, this_var, santacruz)
-        fig.savefig(
-            os.path.join(os.getenv('HOME'),
-                         'plots',
-                         'CLM_f05_g16',
-                         'spinup_{}_santacruz.pdf'.format(this_var.varname)))
-        plt.close(fig)
+    for this_loc in (santacruz, mclaughlin):
+        varname = ['FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI']
+        soil_lev = [None, 7, 2, None, None]
+        for this_varname, this_lev in zip(varname, soil_lev):
+            var = parse_CLM_f05_g15(CLM_f05_g16,
+                                    this_varname,
+                                    this_lev,
+                                    location=this_loc)
+            fig, ax = plot_monthly_timeseries(CLM_f05_g16, var, this_loc)
+            fig.savefig(
+                os.path.join(os.getenv('HOME'),
+                             'plots',
+                             'CLM_f05_g16',
+                             var.get_plot_filename(this_loc)))
+            plt.close(fig)
+
+if __name__ == "__main__":
+    plot_CLMf05g16_monthly_timeseries_main()
