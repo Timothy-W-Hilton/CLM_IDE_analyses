@@ -71,6 +71,20 @@ class CLM_var(object):
                                           location.name.replace(" ", ""))
         return fname
 
+    def annual_mean(self):
+        """return pandas dataframe containing the annual mean
+        """
+        if self.data.squeeze().ndim != 1:
+            raise ValueError(('currently can only calculate annual mean '
+                              'for a scalar time series.'))
+        df = pd.DataFrame({'tstamp': self.tstamp,
+                           self.varname: self.data.squeeze()})
+        # I'm not using np.nanmean because I don't think CLM should
+        # produce any Nans, so I want it to throw an error if it
+        # encounters one
+        am = df.groupby([t.year for t in df.tstamp]).aggregate(np.mean)
+        return am
+
 
 class CLM_spinup_analyzer(object):
     """class to read CLM spinup output and plot key variables
