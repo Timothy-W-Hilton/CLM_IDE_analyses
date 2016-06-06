@@ -6,8 +6,9 @@ import netCDF4
 import numpy as np
 import os
 import glob
-import matplotlib.pyplot as plt
 import calendar
+import matplotlib.pyplot as plt
+import pandas as pd
 
 from clm_domain import CLM_Domain, Location
 
@@ -50,6 +51,9 @@ class CLM_var(object):
 
     def set_data(self, data):
         self.data = data
+
+    def set_tstamp(self, tstamp):
+        self.tstamp = tstamp
 
     def get_plot_filename(self, location):
         """generate a filename for a diagnostic plot
@@ -151,8 +155,7 @@ class CLM_spinup_analyzer(object):
             lat_idx = np.arange(nlat)
             nc.close()
         data = np.zeros([nt, nlat, nlon])
-
-        # TODO: intialize array for time here
+        tstamp = pd.Series(np.zeros([nt]))
 
         missing_value = None
         for i in range(nt):
@@ -161,6 +164,7 @@ class CLM_spinup_analyzer(object):
                     varname,
                     os.path.basename(self.all_files[i]))
             nc = netCDF4.Dataset(self.all_files[i])
+            # parse data
             if soil_lev is None:
                 # each file contains one timestep so the time index is
                 # always 0
@@ -168,7 +172,18 @@ class CLM_spinup_analyzer(object):
             else:
                 data[i, ...] = nc.variables[varname][0, soil_lev,
                                                      lat_idx, lon_idx]
-            # TODO: parse time here
+            # parse time stamp
+            t_YYYYMMDD_str = str(nc.variables['mcdate'][0])
+            t_year = np.int(t_YYYYMMDD_str[0:-4])
+            t_month = np.int(t_YYYYMMDD_str[-4:-2])
+            t_day = np.int(t_YYYYMMDD_str[-2:])
+            t_secs = np.int(nc.variables['mcsec'][0])
+            this_tstamp_date = pd.to_datetime(
+                np.datetime64("{:04d}-{:02d}-{:02d}".format(t_year,
+                                                            t_month,
+                                                            t_day)))
+            tstamp[i] = this_tstamp_date + pd.Timedelta(t_secs, 's')
+            # parse missing value
             try:
                 missing_value = nc.variables[varname].missing_value
             except AttributeError:
@@ -179,6 +194,7 @@ class CLM_spinup_analyzer(object):
         if missing_value is not None:
             data = np.ma.masked_values(data, missing_value)
         var.set_data(data)
+        var.set_tstamp(tstamp)
         return var
 
 
@@ -255,22 +271,27 @@ def plot_monthly_timeseries(spinup_run, var, location):
     return(fig, ax)
 
 
-def plot_CLMf05g16_monthly_timeseries_main():
-    """plot FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI' at Santa Cruz, McLaughlin
-    """
+def CLMf05g16_get_spatial_info():
     CLM_f05_g16 = CLM_spinup_analyzer(os.path.join('/', 'global',
-                                                   'cscratch1', 'sd',
-                                                   'twhilton',
-                                                   'archive',
-                                                   'CLM_f05_g16',
-                                                   'lnd',
-                                                   'hist'),
+                                               'cscratch1', 'sd',
+                                               'twhilton',
+                                               'archive',
+                                               'CLM_f05_g16',
+                                               'lnd',
+                                               'hist'),
                                       'CLM_f05_g16')
     domain_f05_g16 = CLM_Domain(CLM_f05_g16.all_files[0])
     santacruz = Location((-122.03089741, ), (36.9741, ), 'Santa Cruz')
     santacruz.get_clm_xy(domain_f05_g16)
     mclaughlin = Location((-122.431667, ), (38.873889, ), 'McLaughlin NRS')
     mclaughlin.get_clm_xy(domain_f05_g16)
+    return (CLM_f05_g16, santacruz, mclaughlin)
+
+
+def plot_CLMf05g16_monthly_timeseries_main():
+    """plot FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI' at Santa Cruz, McLaughlin
+    """
+    (CLM_f05_g16, santacruz, mclaughlin) = CLMf05g16_get_spatial_info()
 
     for this_loc in (santacruz, mclaughlin):
         varname = ['FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI']
@@ -288,5 +309,14 @@ def plot_CLMf05g16_monthly_timeseries_main():
                              var.get_plot_filename(this_loc)))
             plt.close(fig)
 
+
+def test_tstamp_parse():
+    (CLM_f05_g16, santacruz, mclaughlin) = CLMf05g16_get_spatial_info()
+    var = parse_CLM_f05_g15(CLM_f05_g16,
+                            'FPSN',
+                            None,
+                            location=santacruz)
+    return var
 if __name__ == "__main__":
-    plot_CLMf05g16_monthly_timeseries_main()
+    # plot_CLMf05g16_monthly_timeseries_main()
+    foo = test_tstamp_parse()
