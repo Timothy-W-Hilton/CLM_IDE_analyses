@@ -54,7 +54,7 @@ class CLM_var(object):
         self.data = data
 
     def set_tstamp(self, tstamp):
-        self.tstamp = tstamp
+        self.time = tstamp
 
     def get_plot_filename(self, location):
         """generate a filename for a diagnostic plot
@@ -78,7 +78,7 @@ class CLM_var(object):
         if self.data.squeeze().ndim != 1:
             raise ValueError(('currently can only calculate annual mean '
                               'for a scalar time series.'))
-        df = pd.DataFrame({'tstamp': self.tstamp,
+        df = pd.DataFrame({'tstamp': self.time,
                            self.varname: self.data.squeeze()})
         # I'm not using np.nanmean because I don't think CLM should
         # produce any Nans, so I want it to throw an error if it
@@ -156,6 +156,7 @@ class CLM_spinup_analyzer(object):
         soil_depth = None
         if soil_lev is not None:
             soil_depth = nc.variables['levgrnd'][soil_lev]
+
         var = CLM_var(varname,
                       varname_long=nc.variables[varname].long_name,
                       units=nc.variables[varname].units,
@@ -228,8 +229,11 @@ class AnnualMeanPlotter(object):
         """
         self.location = location
         self.spinup = spinup_container
-        self.var_list = ['FSH', 'QSOIL', 'QVEGE', 'QVEGT',
-                         'QRUNOFF', 'ZWT', 'TLAI', 'FPSN']
+        self.var_list_parse = ['FSH', 'QSOIL', 'QVEGE', 'QVEGT',
+                               'QRUNOFF', 'ZWT', 'TLAI', 'FPSN']
+        self.var_list_plot = ['FSH', 'Q', 'QRUNOFF',
+                              'ZWT', 'TLAI', 'FPSN']
+
     def get_data(self):
         """read FSH, QSOIL, QVEGE, QVEGT, QRUNOFF, ZWT, TLAI, and FPSN
         variables from the spinup run and calculate annual means.
@@ -238,7 +242,7 @@ class AnnualMeanPlotter(object):
         mean values for those variables.
         """
 
-        for this_var in self.var_list:
+        for this_var in self.var_list_parse:
             soil_lev = None  # none of these are soil variables
             var_obj = self.spinup.parse_var(this_var,
                                             lon_idx=self.location.clm_x,
@@ -251,6 +255,7 @@ class AnnualMeanPlotter(object):
                          data=(self.QSOIL.data +
                                self.QVEGE.data +
                                self.QVEGT.data),
+                         time=self.QSOIL.time,
                          units=self.QSOIL.units,
                          missing_value=self.QSOIL.missing_value)
 
@@ -265,16 +270,16 @@ class AnnualMeanPlotter(object):
         """draw the six panel plot
         """
         self._setup_plot()
-        am = self.FSH.annual_mean()
-        self.ax[0, 0].plot(am.index, am.values)
-        self.ax[0, 0].set_title(self.FSH.varname_long)
-        self.ax[0, 0].set_ylabel(self.FSH.units)
-        # self.ax[0, 1].plot(self.t, self.QSOIL + self.QVEGE + self.QVEGT)
-        # self.ax[1, 0].plot(self.t, self.QRUNOFF)
-        # self.ax[1, 1].plot(self.t, self.ZWT)
-        # self.ax[2, 0].plot(self.t, self.TLAI)
-        # self.ax[2, 1].plot(self.t, self.FPSN)
-
+        for this_var in self.var_list_plot:
+            am = getattr(self, this_var).annual_mean()
+            self.ax[0, 0].plot(am.index, am.values)
+            self.ax[0, 0].set_title(self.FSH.varname_long)
+            self.ax[0, 0].set_ylabel(self.FSH.units)
+            # self.ax[0, 1].plot(self.t, self.QSOIL + self.QVEGE + self.QVEGT)
+            # self.ax[1, 0].plot(self.t, self.QRUNOFF)
+            # self.ax[1, 1].plot(self.t, self.ZWT)
+            # self.ax[2, 0].plot(self.t, self.TLAI)
+            # self.ax[2, 1].plot(self.t, self.FPSN)
 
 
 def parse_CLM_f05_g15(spinup_container, varname, soil_lev=None, location=None):
@@ -396,6 +401,7 @@ def test_tstamp_parse():
                             None,
                             location=santacruz)
     return var
+
 if __name__ == "__main__":
     # plot_CLMf05g16_monthly_timeseries_main()
     CLM_f05_g16, santacruz, mclaughlin = CLMf05g16_get_spatial_info()
