@@ -40,6 +40,7 @@ class CLM_var(object):
         self.time = time
         self.units = units
         self.depth = depth
+        self.missing_value = missing_value
 
     def get_long_name(self):
         """returns long name if provided; short name otherwise
@@ -212,6 +213,70 @@ class CLM_spinup_analyzer(object):
         return var
 
 
+class AnnualMeanPlotter(object):
+    """produce 6-panel plot of CLM variable annual means for spinup diagnosis
+
+    The variables plotted are sensible heat (FSH), latent heat (QSOIL
+    + QVEGE + QVEGT), liquid runoff (QRUNOFF), water table depth
+    (ZWT), total leaf area index (TLAI), and GPP (FPSN).  CLM does not
+    report latent heat flux as such so I use [soil evaporation (QSOIL)
+    + canopy evaporation (QVEGE) + canopy transpiration (QVEGT)].
+    """
+
+    def __init__(self, spinup_container, location):
+        """populate fields spinup, location, var_list
+        """
+        self.location = location
+        self.spinup = spinup_container
+        self.var_list = ['FSH', 'QSOIL', 'QVEGE', 'QVEGT',
+                         'QRUNOFF', 'ZWT', 'TLAI', 'FPSN']
+    def get_data(self):
+        """read FSH, QSOIL, QVEGE, QVEGT, QRUNOFF, ZWT, TLAI, and FPSN
+        variables from the spinup run and calculate annual means.
+        Populates class fields t with timestamps and fields FSH,
+        QSOIL, QVEGE, QVEGT, QRUNOFF, ZWT, TLAI, and FPSN with annual
+        mean values for those variables.
+        """
+
+        for this_var in self.var_list:
+            soil_lev = None  # none of these are soil variables
+            var_obj = self.spinup.parse_var(this_var,
+                                            lon_idx=self.location.clm_x,
+                                            lat_idx=self.location.clm_y,
+                                            soil_lev=soil_lev)
+            setattr(self, this_var, var_obj)
+        # populate latent heat
+        self.Q = CLM_var(varname='Q',
+                         varname_long='latent heat flux',
+                         data=(self.QSOIL.data +
+                               self.QVEGE.data +
+                               self.QVEGT.data),
+                         units=self.QSOIL.units,
+                         missing_value=self.QSOIL.missing_value)
+
+    def _setup_plot(self):
+        self.fig, self.ax = plt.subplots(nrows=3, ncols=2, figsize=(8.5, 11))
+        self.fig.text(0.5, 0.95, '{}'.format(self.location.name),
+                      verticalalignment='top',
+                      horizontalalignment='center',
+                      size='large')
+
+    def plot(self):
+        """draw the six panel plot
+        """
+        self._setup_plot()
+        am = self.FSH.annual_mean()
+        self.ax[0, 0].plot(am.index, am.values)
+        self.ax[0, 0].set_title(self.FSH.varname_long)
+        self.ax[0, 0].set_ylabel(self.FSH.units)
+        # self.ax[0, 1].plot(self.t, self.QSOIL + self.QVEGE + self.QVEGT)
+        # self.ax[1, 0].plot(self.t, self.QRUNOFF)
+        # self.ax[1, 1].plot(self.t, self.ZWT)
+        # self.ax[2, 0].plot(self.t, self.TLAI)
+        # self.ax[2, 1].plot(self.t, self.FPSN)
+
+
+
 def parse_CLM_f05_g15(spinup_container, varname, soil_lev=None, location=None):
     """wrapper function to read data from CLM_f05_g16 spinup run
     """
@@ -333,4 +398,7 @@ def test_tstamp_parse():
     return var
 if __name__ == "__main__":
     # plot_CLMf05g16_monthly_timeseries_main()
-    foo = test_tstamp_parse()
+    CLM_f05_g16, santacruz, mclaughlin = CLMf05g16_get_spatial_info()
+    amp = AnnualMeanPlotter(CLM_f05_g16, santacruz)
+    amp.get_data()
+    amp.plot()
