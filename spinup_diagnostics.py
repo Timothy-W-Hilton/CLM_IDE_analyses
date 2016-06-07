@@ -280,7 +280,10 @@ class AnnualMeanPlotter(object):
             t_str = getattr(self, this_var).varname_long.split("(")[0]
             this_ax.set_title(t_str)
             this_ax.set_ylabel(getattr(self, this_var).units)
-        self.fig.tight_layout()
+        # self.fig.tight_layout()
+        for this_col in range(2):
+            self.ax[-1, this_col].set_xlabel('year')
+
 
 
 def mm_s_2_w_m2_s(mm_s):
