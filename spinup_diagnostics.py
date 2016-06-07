@@ -231,7 +231,7 @@ class AnnualMeanPlotter(object):
         self.spinup = spinup_container
         self.var_list_parse = ['FSH', 'QSOIL', 'QVEGE', 'QVEGT',
                                'QRUNOFF', 'ZWT', 'TLAI', 'FPSN']
-        self.var_list_plot = ['FSH', 'Q', 'QRUNOFF',
+        self.var_list_plot = ['FSH', 'LE', 'QRUNOFF',
                               'ZWT', 'TLAI', 'FPSN']
 
     def get_data(self):
@@ -250,14 +250,17 @@ class AnnualMeanPlotter(object):
                                             soil_lev=soil_lev)
             setattr(self, this_var, var_obj)
         # populate latent heat
-        self.Q = CLM_var(varname='Q',
-                         varname_long='latent heat flux',
-                         data=(self.QSOIL.data +
-                               self.QVEGE.data +
-                               self.QVEGT.data),
-                         time=self.QSOIL.time,
-                         units=self.QSOIL.units,
-                         missing_value=self.QSOIL.missing_value)
+        self.LE = CLM_var(varname='LE',
+                          varname_long='latent heat flux',
+                          data=mm_s_2_w_m2_s(self.QSOIL.data +
+                                             self.QVEGE.data +
+                                             self.QVEGT.data),
+                          time=self.QSOIL.time,
+                          units='W/m^2',
+                          missing_value=self.QSOIL.missing_value)
+        s_per_day = 24.0 * 60.0 * 60.0
+        self.QRUNOFF.data = self.QRUNOFF.data * s_per_day
+        self.QRUNOFF.units = 'mm/day'
 
     def _setup_plot(self):
         self.fig, self.ax = plt.subplots(nrows=3, ncols=2, figsize=(8.5, 11))
@@ -270,16 +273,30 @@ class AnnualMeanPlotter(object):
         """draw the six panel plot
         """
         self._setup_plot()
-        for this_var in self.var_list_plot:
+        for this_var, this_ax in zip(self.var_list_plot, self.ax.flatten()):
             am = getattr(self, this_var).annual_mean()
-            self.ax[0, 0].plot(am.index, am.values)
-            self.ax[0, 0].set_title(self.FSH.varname_long)
-            self.ax[0, 0].set_ylabel(self.FSH.units)
-            # self.ax[0, 1].plot(self.t, self.QSOIL + self.QVEGE + self.QVEGT)
-            # self.ax[1, 0].plot(self.t, self.QRUNOFF)
-            # self.ax[1, 1].plot(self.t, self.ZWT)
-            # self.ax[2, 0].plot(self.t, self.TLAI)
-            # self.ax[2, 1].plot(self.t, self.FPSN)
+            this_ax.plot(am.index, am.values)
+            # don't place parenthetical part of long name in plot title
+            t_str = getattr(self, this_var).varname_long.split("(")[0]
+            this_ax.set_title(t_str)
+            this_ax.set_ylabel(getattr(self, this_var).units)
+        self.fig.tight_layout()
+
+
+def mm_s_2_w_m2_s(mm_s):
+    """convert latent heat flux (or evapotranspiration) from units of
+    mm s-1 to W m-2 s-1
+    """
+    # 1 mm m-2 s-1 equals 1 kg m-2 s-1
+    # (http://www.colorado.edu/geography/class_homepages/geog_3511_s11/notes/Notes_9.pdf)
+    #
+    # LE = E * lambda_v
+    #
+    # lambda_v is latent heat of evaporation of water = 2.501x1e6 J kg-1
+    #
+    # therefore LE = Q (mm m-2 s-1) * lambda_v
+    lambda_v = 2.501*1e6
+    return mm_s * lambda_v
 
 
 def parse_CLM_f05_g15(spinup_container, varname, soil_lev=None, location=None):
