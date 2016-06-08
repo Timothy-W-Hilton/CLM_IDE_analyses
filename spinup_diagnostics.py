@@ -102,6 +102,20 @@ class CLM_var(object):
         am = df.groupby([t.year for t in df.tstamp]).aggregate(np.mean)
         return am
 
+    def monthly_mean(self):
+        """return pandas dataframe containing the annual mean
+        """
+        if self.data.squeeze().ndim != 1:
+            raise ValueError(('currently can only calculate annual mean '
+                              'for a scalar time series.'))
+        df = pd.DataFrame({'tstamp': self.time,
+                           self.varname: self.data.squeeze()})
+        # I'm not using np.nanmean because I don't think CLM should
+        # produce any Nans, so I want it to throw an error if it
+        # encounters one
+        mm = df.groupby([t.month for t in df.tstamp]).aggregate(np.mean)
+        return mm
+
 
 class CLM_spinup_analyzer(object):
     """class to read CLM spinup output and plot key variables
@@ -313,29 +327,18 @@ class AnnualMeanPlotter(object):
         for this_var, this_ax in zip(self.var_list_plot, self.ax.flatten()):
             # the last year of the spinup only went through October so
             # year 51 is not a full year annual average
-            am = getattr(self, this_var).annual_mean()[:50]
-            this_ax.plot(am.index, am.values, label='annual mean', linewidth=lw)
-            this_ax.plot(am.index, pd.rolling_mean(am.values, window=10),
-                         '--', label='10-year running mean',
+            mm = getattr(self, this_var).monthly_mean()
+            this_ax.plot(mm.index, mm.values, label='monthly mean',
                          linewidth=lw)
             # don't place parenthetical part of long name in plot title
             t_str = getattr(self, this_var).varname_long.split("(")[0]
             this_ax.set_title(t_str)
             this_ax.set_ylabel(getattr(self, this_var).units)
-        if self.location.name == "ARM Southern Great Plains":
-            armobs = self.get_ARM_data()
-            self.ax[0, 0].plot(armobs.index, armobs.H, 'k:', label='observed',
-                               linewidth=lw)
-            self.ax[0, 1].plot(armobs.index, armobs.LE, 'k:',
-                               linewidth=lw)
-            # put a dummy line in the axes from which the legend is drawn
-            dummy = self.ax[-1, 0].plot([], [], 'k:', label='observed',
-                                        linewidth=lw)
         self.ax[-1, 0].legend(loc='upper left',
                               bbox_to_anchor=(0.2, -0.15),
                               ncol=2)
         for this_col in range(2):
-            self.ax[-1, this_col].set_xlabel('year')
+            self.ax[-1, this_col].set_xlabel('month')
 
 
 def mm_s_2_w_m2_s(mm_s):
@@ -490,9 +493,9 @@ def test_tstamp_parse():
 def annual_mean_plots_main():
     (CLM_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
-    # for this_site in (santacruz, mclaughlin,
-    #                   sierra_foothills, loma_ridge, ARM_SGP):
-    for this_site in (ARM_SGP, ):
+    for this_site in (santacruz, mclaughlin,
+                      sierra_foothills, loma_ridge, ARM_SGP):
+    # for this_site in (ARM_SGP, ):
         print 'plotting summary for {}'.format(this_site.name)
         amp = AnnualMeanPlotter(CLM_f05_g16, this_site)
         amp.get_data()
@@ -500,9 +503,9 @@ def annual_mean_plots_main():
         amp.fig.savefig(os.path.join(os.getenv('HOME'),
                                      'plots',
                                      'CLM_f05_g16',
-                                     '{}_spinup_annual_means.pdf'.format(
+                                     '{}_spinup_monthly_means.pdf'.format(
                                          this_site.name.replace(' ', ''))))
 
 if __name__ == "__main__":
     # plot_CLMf05g16_monthly_timeseries_main()
-    annual_mean_plots_main()
+    foo = annual_mean_plots_main()
