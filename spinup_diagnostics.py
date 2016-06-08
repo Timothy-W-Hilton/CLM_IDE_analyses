@@ -389,13 +389,24 @@ def CLMf05g16_get_spatial_info():
     santacruz.get_clm_xy(domain_f05_g16)
     mclaughlin = Location((-122.431667, ), (38.873889, ), 'McLaughlin NRS')
     mclaughlin.get_clm_xy(domain_f05_g16)
-    return (CLM_f05_g16, santacruz, mclaughlin)
+    sierra_foothills = Location((-121.311623, ), (39.249407, ),
+                                'Sierra Foothill Research Extension Center')
+    sierra_foothills.get_clm_xy(domain_f05_g16)
+    loma_ridge = Location((-117.7, ), (33.74, ),
+                          'Loma Ridge Global Change Experiment')
+    loma_ridge.get_clm_xy(domain_f05_g16)
+    ARM_SGP = Location((-97.4888, ), (36.6058, ),
+                          'ARM Southern Great Plains')
+    ARM_SGP.get_clm_xy(domain_f05_g16)
+    return (CLM_f05_g16, santacruz, mclaughlin,
+            sierra_foothills, loma_ridge, ARM_SGP)
 
 
 def plot_CLMf05g16_monthly_timeseries_main():
     """plot FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI' at Santa Cruz, McLaughlin
     """
-    (CLM_f05_g16, santacruz, mclaughlin) = CLMf05g16_get_spatial_info()
+    (CLM_f05_g16, santacruz, mclaughlin,
+     sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
 
     for this_loc in (santacruz, mclaughlin):
         varname = ['FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI']
@@ -415,7 +426,8 @@ def plot_CLMf05g16_monthly_timeseries_main():
 
 
 def test_tstamp_parse():
-    (CLM_f05_g16, santacruz, mclaughlin) = CLMf05g16_get_spatial_info()
+    (CLM_f05_g16, santacruz, mclaughlin,
+     sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
     var = parse_CLM_f05_g15(CLM_f05_g16,
                             'FPSN',
                             None,
@@ -424,7 +436,16 @@ def test_tstamp_parse():
 
 if __name__ == "__main__":
     # plot_CLMf05g16_monthly_timeseries_main()
-    CLM_f05_g16, santacruz, mclaughlin = CLMf05g16_get_spatial_info()
-    amp = AnnualMeanPlotter(CLM_f05_g16, santacruz)
-    amp.get_data()
-    amp.plot()
+    (CLM_f05_g16, santacruz, mclaughlin,
+    sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
+    for this_site in (santacruz, mclaughlin,
+                      sierra_foothills, loma_ridge, ARM_SGP):
+        print 'plotting summary for {}'.format(this_site.name)
+        amp = AnnualMeanPlotter(CLM_f05_g16, this_site)
+        amp.get_data()
+        amp.plot()
+        amp.fig.savefig(os.path.join(os.getenv('HOME'),
+                                     'plots',
+                                     'CLM_f05_g16',
+                                     '{}_spinup_annual_means.pdf'.format(
+                                         this_site.name.replace(' ', ''))))
