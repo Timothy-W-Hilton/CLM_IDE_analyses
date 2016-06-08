@@ -13,6 +13,22 @@ import pandas as pd
 from clm_domain import CLM_Domain, Location
 
 
+class ARM_data(object):
+    """container class for ARM Southern Great Plains Ameriflux data
+    """
+    def __init__(self, fname):
+        self.fname = fname
+        self.data = None
+
+    def parse_data(self):
+        self.data = pd.read_csv(self.fname, header=2, na_values=('-9999', ))
+        self.data = self.data[['TIMESTAMP_START', 'H', 'LE']]
+        self.data['YEAR'] = np.floor(self.data['TIMESTAMP_START'] / 1e8)
+
+    def annual_mean(self):
+        self.am = self.data.groupby('YEAR').aggregate(np.mean)
+
+
 class CLM_var(object):
     """container class for a CLM output variable data and metadata
     """
@@ -249,6 +265,14 @@ class AnnualMeanPlotter(object):
                                             lat_idx=self.location.clm_y,
                                             soil_lev=soil_lev)
             setattr(self, this_var, var_obj)
+
+        C_g_per_mol = 12.01
+        mol_per_umol = 1e-6
+        s_per_year = 60 * 60 * 24 * 365
+        self.FPSN.data = (self.FPSN.data *
+                          C_g_per_mol * mol_per_umol * s_per_year)
+        self.FPSN.units = 'g C m-2 yr-1'
+
         # populate latent heat
         self.LE = CLM_var(varname='LE',
                           varname_long='latent heat flux',
@@ -274,16 +298,22 @@ class AnnualMeanPlotter(object):
         """
         self._setup_plot()
         for this_var, this_ax in zip(self.var_list_plot, self.ax.flatten()):
-            am = getattr(self, this_var).annual_mean()
-            this_ax.plot(am.index, am.values)
+            # the last year of the spinup only went through October so
+            # year 51 is not a full year annual average
+            am = getattr(self, this_var).annual_mean()[:50]
+            this_ax.plot(am.index, am.values, label='annual mean')
+            this_ax.plot(am.index, pd.rolling_mean(am.values, window=10),
+                         '--', label='10-year running mean')
             # don't place parenthetical part of long name in plot title
             t_str = getattr(self, this_var).varname_long.split("(")[0]
             this_ax.set_title(t_str)
             this_ax.set_ylabel(getattr(self, this_var).units)
         # self.fig.tight_layout()
+        self.ax[-1, 0].legend(loc='upper left',
+                              bbox_to_anchor=(0.2, -0.15),
+                              ncol=2)
         for this_col in range(2):
             self.ax[-1, this_col].set_xlabel('year')
-
 
 
 def mm_s_2_w_m2_s(mm_s):
@@ -377,12 +407,12 @@ def plot_monthly_timeseries(spinup_run, var, location):
 
 def CLMf05g16_get_spatial_info():
     CLM_f05_g16 = CLM_spinup_analyzer(os.path.join('/', 'global',
-                                               'cscratch1', 'sd',
-                                               'twhilton',
-                                               'archive',
-                                               'CLM_f05_g16',
-                                               'lnd',
-                                               'hist'),
+                                                   'cscratch1', 'sd',
+                                                   'twhilton',
+                                                   'archive',
+                                                   'CLM_f05_g16',
+                                                   'lnd',
+                                                   'hist'),
                                       'CLM_f05_g16')
     domain_f05_g16 = CLM_Domain(CLM_f05_g16.all_files[0])
     santacruz = Location((-122.03089741, ), (36.9741, ), 'Santa Cruz')
@@ -396,7 +426,7 @@ def CLMf05g16_get_spatial_info():
                           'Loma Ridge Global Change Experiment')
     loma_ridge.get_clm_xy(domain_f05_g16)
     ARM_SGP = Location((-97.4888, ), (36.6058, ),
-                          'ARM Southern Great Plains')
+                       'ARM Southern Great Plains')
     ARM_SGP.get_clm_xy(domain_f05_g16)
     return (CLM_f05_g16, santacruz, mclaughlin,
             sierra_foothills, loma_ridge, ARM_SGP)
@@ -434,10 +464,9 @@ def test_tstamp_parse():
                             location=santacruz)
     return var
 
-if __name__ == "__main__":
-    # plot_CLMf05g16_monthly_timeseries_main()
+def annual_mean_plots_main():
     (CLM_f05_g16, santacruz, mclaughlin,
-    sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
+     sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
     for this_site in (santacruz, mclaughlin,
                       sierra_foothills, loma_ridge, ARM_SGP):
         print 'plotting summary for {}'.format(this_site.name)
@@ -449,3 +478,10 @@ if __name__ == "__main__":
                                      'CLM_f05_g16',
                                      '{}_spinup_annual_means.pdf'.format(
                                          this_site.name.replace(' ', ''))))
+
+if __name__ == "__main__":
+    # plot_CLMf05g16_monthly_timeseries_main()
+    # annual_mean_plots_main()
+    usarm = ARM_data('./AMF_US-ARM_BASE_HH_6-1.csv')
+    usarm.parse_data()
+    usarm.annual_mean()
