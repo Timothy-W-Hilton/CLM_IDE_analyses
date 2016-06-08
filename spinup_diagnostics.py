@@ -250,6 +250,18 @@ class AnnualMeanPlotter(object):
         self.var_list_plot = ['FSH', 'LE', 'QRUNOFF',
                               'ZWT', 'TLAI', 'FPSN']
 
+
+    def get_ARM_data(self):
+        """calculate Ameriflux observed annual mean from US-ARM
+        """
+        usarm = ARM_data('./AMF_US-ARM_BASE_HH_6-1.csv')
+        usarm.parse_data()
+        usarm.annual_mean()
+        nyears = usarm.am.shape[0]
+        usarm.am.index = np.arange(51 - nyears, 51)
+        return usarm.am
+
+
     def get_data(self):
         """read FSH, QSOIL, QVEGE, QVEGT, QRUNOFF, ZWT, TLAI, and FPSN
         variables from the spinup run and calculate annual means.
@@ -296,19 +308,29 @@ class AnnualMeanPlotter(object):
     def plot(self):
         """draw the six panel plot
         """
+        lw = 2.0  # line width
         self._setup_plot()
         for this_var, this_ax in zip(self.var_list_plot, self.ax.flatten()):
             # the last year of the spinup only went through October so
             # year 51 is not a full year annual average
             am = getattr(self, this_var).annual_mean()[:50]
-            this_ax.plot(am.index, am.values, label='annual mean')
+            this_ax.plot(am.index, am.values, label='annual mean', linewidth=lw)
             this_ax.plot(am.index, pd.rolling_mean(am.values, window=10),
-                         '--', label='10-year running mean')
+                         '--', label='10-year running mean',
+                         linewidth=lw)
             # don't place parenthetical part of long name in plot title
             t_str = getattr(self, this_var).varname_long.split("(")[0]
             this_ax.set_title(t_str)
             this_ax.set_ylabel(getattr(self, this_var).units)
-        # self.fig.tight_layout()
+        if self.location.name == "ARM Southern Great Plains":
+            armobs = self.get_ARM_data()
+            self.ax[0, 0].plot(armobs.index, armobs.H, 'k:', label='observed',
+                               linewidth=lw)
+            self.ax[0, 1].plot(armobs.index, armobs.LE, 'k:',
+                               linewidth=lw)
+            # put a dummy line in the axes from which the legend is drawn
+            dummy = self.ax[-1, 0].plot([], [], 'k:', label='observed',
+                                        linewidth=lw)
         self.ax[-1, 0].legend(loc='upper left',
                               bbox_to_anchor=(0.2, -0.15),
                               ncol=2)
@@ -464,11 +486,13 @@ def test_tstamp_parse():
                             location=santacruz)
     return var
 
+
 def annual_mean_plots_main():
     (CLM_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
-    for this_site in (santacruz, mclaughlin,
-                      sierra_foothills, loma_ridge, ARM_SGP):
+    # for this_site in (santacruz, mclaughlin,
+    #                   sierra_foothills, loma_ridge, ARM_SGP):
+    for this_site in (ARM_SGP, ):
         print 'plotting summary for {}'.format(this_site.name)
         amp = AnnualMeanPlotter(CLM_f05_g16, this_site)
         amp.get_data()
@@ -481,7 +505,4 @@ def annual_mean_plots_main():
 
 if __name__ == "__main__":
     # plot_CLMf05g16_monthly_timeseries_main()
-    # annual_mean_plots_main()
-    usarm = ARM_data('./AMF_US-ARM_BASE_HH_6-1.csv')
-    usarm.parse_data()
-    usarm.annual_mean()
+    annual_mean_plots_main()
