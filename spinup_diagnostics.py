@@ -233,9 +233,9 @@ class CLM_spinup_analyzer(object):
             # TODO: update for numpy 1.11 "timezone-naive" datetime64
             # http://docs.scipy.org/doc/numpy/reference/arrays.datetime.html#changes-with-numpy-1-11
             this_tstamp_date = np.datetime64(
-                "{:04d}-{:02d}-{:02d}T00:00-0000".format(t_year,
-                                                         t_month,
-                                                         t_day))
+                "{:04d}-{:02d}-{:02d}T00:00".format(t_year,
+                                                    t_month,
+                                                    t_day))
             tstamp[i] = this_tstamp_date + np.timedelta64(t_secs, 's')
             # parse missing value
             try:
