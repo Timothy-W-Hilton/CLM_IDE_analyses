@@ -23,6 +23,7 @@ class ARM_data(object):
     def parse_data(self):
         self.data = pd.read_csv(self.fname, header=2, na_values=('-9999', ))
         self.data = self.data[['TIMESTAMP_START', 'H', 'LE']]
+        #extract year from date in format YYYYMMDDHHMM
         self.data['YEAR'] = np.floor(self.data['TIMESTAMP_START'] / 1e8)
 
     def annual_mean(self):
@@ -99,7 +100,11 @@ class CLM_var(object):
         # I'm not using np.nanmean because I don't think CLM should
         # produce any Nans, so I want it to throw an error if it
         # encounters one
-        am = df.groupby([t.year for t in df.tstamp]).aggregate(np.mean)
+        #
+        # extract a year, month, day from a numpy datetime64 by
+        #  (dt64.astype(object).year)
+        yr = [t.astype(object).year for t in df.tstamp]
+        am = df.groupby(yr).aggregate(np.mean)
         return am
 
     def monthly_mean(self):
@@ -113,7 +118,8 @@ class CLM_var(object):
         # I'm not using np.nanmean because I don't think CLM should
         # produce any Nans, so I want it to throw an error if it
         # encounters one
-        mm = df.groupby([t.month for t in df.tstamp]).aggregate(np.mean)
+        month = [t.month for t in df.tstamp]
+        mm = df.groupby(month).aggregate(np.mean)
         return mm
 
 
@@ -201,7 +207,7 @@ class CLM_spinup_analyzer(object):
             lat_idx = np.arange(nlat)
             nc.close()
         data = np.zeros([nt, nlat, nlon])
-        tstamp = pd.Series(np.zeros([nt]))
+        tstamp = np.empty(nt, dtype='datetime64[s]')
 
         missing_value = None
         for i in range(nt):
@@ -224,18 +230,20 @@ class CLM_spinup_analyzer(object):
             t_month = np.int(t_YYYYMMDD_str[-4:-2])
             t_day = np.int(t_YYYYMMDD_str[-2:])
             t_secs = np.int(nc.variables['mcsec'][0])
-            this_tstamp_date = pd.to_datetime(
-                np.datetime64("{:04d}-{:02d}-{:02d}".format(t_year,
-                                                            t_month,
-                                                            t_day)))
-            tstamp[i] = this_tstamp_date + pd.Timedelta(t_secs, 's')
+            # TODO: update for numpy 1.11 "timezone-naive" datetime64
+            # http://docs.scipy.org/doc/numpy/reference/arrays.datetime.html#changes-with-numpy-1-11
+            this_tstamp_date = np.datetime64(
+                "{:04d}-{:02d}-{:02d}T00:00-0000".format(t_year,
+                                                         t_month,
+                                                         t_day))
+            tstamp[i] = this_tstamp_date + np.timedelta64(t_secs, 's')
             # parse missing value
             try:
                 missing_value = nc.variables[varname].missing_value
             except AttributeError:
                 if verbose:
                     print "no missing_value for {} in {}".format(
-                        os.path.basename(self.all_files[i]), varname)
+                    os.path.basename(self.all_files[i]), varname)
             nc.close()
         if missing_value is not None:
             data = np.ma.masked_values(data, missing_value)
@@ -260,9 +268,9 @@ class AnnualMeanPlotter(object):
         self.location = location
         self.spinup = spinup_container
         self.var_list_parse = ['FSH', 'QSOIL', 'QVEGE', 'QVEGT',
-                               'QRUNOFF', 'ZWT', 'TLAI', 'FPSN']
+        'QRUNOFF', 'ZWT', 'TLAI', 'FPSN']
         self.var_list_plot = ['FSH', 'LE', 'QRUNOFF',
-                              'ZWT', 'TLAI', 'FPSN']
+        'ZWT', 'TLAI', 'FPSN']
 
 
     def get_ARM_data(self):
@@ -287,27 +295,27 @@ class AnnualMeanPlotter(object):
         for this_var in self.var_list_parse:
             soil_lev = None  # none of these are soil variables
             var_obj = self.spinup.parse_var(this_var,
-                                            lon_idx=self.location.clm_x,
-                                            lat_idx=self.location.clm_y,
-                                            soil_lev=soil_lev)
+            lon_idx=self.location.clm_x,
+            lat_idx=self.location.clm_y,
+            soil_lev=soil_lev)
             setattr(self, this_var, var_obj)
 
         C_g_per_mol = 12.01
         mol_per_umol = 1e-6
         s_per_year = 60 * 60 * 24 * 365
         self.FPSN.data = (self.FPSN.data *
-                          C_g_per_mol * mol_per_umol * s_per_year)
+        C_g_per_mol * mol_per_umol * s_per_year)
         self.FPSN.units = 'g C m-2 yr-1'
 
         # populate latent heat
         self.LE = CLM_var(varname='LE',
-                          varname_long='latent heat flux',
-                          data=mm_s_2_w_m2_s(self.QSOIL.data +
-                                             self.QVEGE.data +
-                                             self.QVEGT.data),
-                          time=self.QSOIL.time,
-                          units='W/m^2',
-                          missing_value=self.QSOIL.missing_value)
+        varname_long='latent heat flux',
+        data=mm_s_2_w_m2_s(self.QSOIL.data +
+                           self.QVEGE.data +
+                           self.QVEGT.data),
+        time=self.QSOIL.time,
+        units='W/m^2',
+        missing_value=self.QSOIL.missing_value)
         s_per_day = 24.0 * 60.0 * 60.0
         self.QRUNOFF.data = self.QRUNOFF.data * s_per_day
         self.QRUNOFF.units = 'mm/day'
@@ -315,9 +323,9 @@ class AnnualMeanPlotter(object):
     def _setup_plot(self):
         self.fig, self.ax = plt.subplots(nrows=3, ncols=2, figsize=(8.5, 11))
         self.fig.text(0.5, 0.95, '{}'.format(self.location.name),
-                      verticalalignment='top',
-                      horizontalalignment='center',
-                      size='large')
+        verticalalignment='top',
+        horizontalalignment='center',
+        size='large')
 
     def plot(self):
         """draw the six panel plot
@@ -329,7 +337,7 @@ class AnnualMeanPlotter(object):
             # year 51 is not a full year annual average
             mm = getattr(self, this_var).monthly_mean()
             this_ax.plot(mm.index, mm.values, label='monthly mean',
-                         linewidth=lw)
+            linewidth=lw)
             # don't place parenthetical part of long name in plot title
             t_str = getattr(self, this_var).varname_long.split("(")[0]
             this_ax.set_title(t_str)
