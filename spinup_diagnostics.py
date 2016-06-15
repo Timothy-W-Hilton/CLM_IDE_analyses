@@ -256,8 +256,8 @@ class AnnualMeanPlotter(object):
     """produce 6-panel plot of CLM variable annual means for spinup diagnosis
 
     The variables plotted are sensible heat (FSH), latent heat (QSOIL
-    + QVEGE + QVEGT), liquid runoff (QRUNOFF), water table depth
-    (ZWT), total leaf area index (TLAI), and GPP (FPSN).  CLM does not
+    + QVEGE + QVEGT), liquid runoff (QRUNOFF), total water storage
+    (WT), total leaf area index (TLAI), and GPP (FPSN).  CLM does not
     report latent heat flux as such so I use [soil evaporation (QSOIL)
     + canopy evaporation (QVEGE) + canopy transpiration (QVEGT)].
     """
@@ -268,9 +268,9 @@ class AnnualMeanPlotter(object):
         self.location = location
         self.spinup = spinup_container
         self.var_list_parse = ['FSH', 'QSOIL', 'QVEGE', 'QVEGT',
-        'QRUNOFF', 'ZWT', 'TLAI', 'FPSN']
+        'QRUNOFF', 'WT', 'TLAI', 'FPSN']
         self.var_list_plot = ['FSH', 'LE', 'QRUNOFF',
-        'ZWT', 'TLAI', 'FPSN']
+        'WT', 'TLAI', 'FPSN']
 
 
     def get_ARM_data(self):
@@ -285,10 +285,10 @@ class AnnualMeanPlotter(object):
 
 
     def get_data(self):
-        """read FSH, QSOIL, QVEGE, QVEGT, QRUNOFF, ZWT, TLAI, and FPSN
+        """read FSH, QSOIL, QVEGE, QVEGT, QRUNOFF, WT, TLAI, and FPSN
         variables from the spinup run and calculate annual means.
         Populates class fields t with timestamps and fields FSH,
-        QSOIL, QVEGE, QVEGT, QRUNOFF, ZWT, TLAI, and FPSN with annual
+        QSOIL, QVEGE, QVEGT, QRUNOFF, WT, TLAI, and FPSN with annual
         mean values for those variables.
         """
 
@@ -466,13 +466,13 @@ def CLMf05g16_get_spatial_info():
 
 
 def plot_CLMf05g16_monthly_timeseries_main():
-    """plot FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI' at Santa Cruz, McLaughlin
+    """plot FPSN', 'H2OSOI', 'H2OSOI', 'WT', 'TLAI' at Santa Cruz, McLaughlin
     """
     (CLM_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
 
     for this_loc in (santacruz, mclaughlin):
-        varname = ['FPSN', 'H2OSOI', 'H2OSOI', 'ZWT', 'TLAI']
+        varname = ['FPSN', 'H2OSOI', 'H2OSOI', 'WT', 'TLAI']
         soil_lev = [None, 7, 2, None, None]
         for this_varname, this_lev in zip(varname, soil_lev):
             var = parse_CLM_f05_g15(CLM_f05_g16,
