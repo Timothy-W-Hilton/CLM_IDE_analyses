@@ -307,9 +307,9 @@ class AnnualCyclePlotter(object):
         C_g_per_mol = 12.01
         mol_per_umol = 1e-6
         s_per_year = 60 * 60 * 24 * 365
-        self.FPSN.data = (self.FPSN.data *
-                          C_g_per_mol * mol_per_umol * s_per_year)
-        self.FPSN.units = 'g C m-2 yr-1'
+        # self.FPSN.data = (self.FPSN.data *
+        #                   C_g_per_mol * mol_per_umol * s_per_year)
+        # self.FPSN.units = 'g C m-2 yr-1'
 
         # populate latent heat
         self.LE = CLM_var(varname='LE',
