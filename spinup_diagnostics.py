@@ -2,6 +2,9 @@
 toward parsing time series of a few key variables and making sure the
 spinup achieved steady state """
 
+import matplotlib
+matplotlib.use('AGG')
+
 import netCDF4
 import numpy as np
 import os
@@ -95,15 +98,14 @@ class CLM_var(object):
         if self.data.squeeze().ndim != 1:
             raise ValueError(('currently can only calculate annual mean '
                               'for a scalar time series.'))
-        df = pd.DataFrame({'tstamp': self.time,
-                           self.varname: self.data.squeeze()})
+        df = pd.DataFrame({self.varname: self.data.squeeze()})
         # I'm not using np.nanmean because I don't think CLM should
         # produce any Nans, so I want it to throw an error if it
         # encounters one
         #
         # extract a year, month, day from a numpy datetime64 by
         #  (dt64.astype(object).year)
-        yr = [t.astype(object).year for t in df.tstamp]
+        yr = [t.astype(object).year for t in self.time]
         am = df.groupby(yr).aggregate(np.mean)
         return am
 
@@ -163,20 +165,20 @@ class CLM_spinup_analyzer(object):
 
         Args:
         varname (string): name of the netCDF variable to parse.  Must
-            be present in all files in self.data_filenames
+        be present in all files in self.data_filenames
         lon_idx (integer): optional; if specified only a single grid
-            cell will be parsed.  Ignored if lat_idx is not also specified.
+        cell will be parsed.  Ignored if lat_idx is not also specified.
         lat_idx (integer): optional; if specified only a single grid
-            cell will be parsed
+        cell will be parsed
         soil_lev (integer): optional, if specified, indicates that the
-            variable is a soil variable and a soil level is needed
+        variable is a soil variable and a soil level is needed
         mask_missing ({True}|False): if True, check the requested
-            netCDF variable for an attribute named "missing_value".
-            If present, parse it and return a numpy masked array with
-            values equal (within floating point tolerance) to
-            missing_value masked.
+        netCDF variable for an attribute named "missing_value".
+        If present, parse it and return a numpy masked array with
+        values equal (within floating point tolerance) to
+        missing_value masked.
         verbose (True|{False}): if True, display a status message as
-            each file is read
+        each file is read
 
         RETURNS:
         a CLM_var instance containing the parsed data
@@ -243,7 +245,7 @@ class CLM_spinup_analyzer(object):
             except AttributeError:
                 if verbose:
                     print "no missing_value for {} in {}".format(
-                    os.path.basename(self.all_files[i]), varname)
+                        os.path.basename(self.all_files[i]), varname)
             nc.close()
         if missing_value is not None:
             data = np.ma.masked_values(data, missing_value)
@@ -252,8 +254,10 @@ class CLM_spinup_analyzer(object):
         return var
 
 
-class AnnualMeanPlotter(object):
-    """produce 6-panel plot of CLM variable annual means for spinup diagnosis
+class AnnualCyclePlotter(object):
+    """produce 6-panel plot of CLM variable annual cycle for spinup diagnosis
+
+    can plot either monthly mean or annual mean time series
 
     The variables plotted are sensible heat (FSH), latent heat (QSOIL
     + QVEGE + QVEGT), liquid runoff (QRUNOFF), total water storage
@@ -268,9 +272,9 @@ class AnnualMeanPlotter(object):
         self.location = location
         self.spinup = spinup_container
         self.var_list_parse = ['FSH', 'QSOIL', 'QVEGE', 'QVEGT',
-        'QRUNOFF', 'WT', 'TLAI', 'FPSN']
+                               'QRUNOFF', 'WT', 'TLAI', 'FPSN']
         self.var_list_plot = ['FSH', 'LE', 'QRUNOFF',
-        'WT', 'TLAI', 'FPSN']
+                              'WT', 'TLAI', 'FPSN']
 
 
     def get_ARM_data(self):
@@ -295,27 +299,27 @@ class AnnualMeanPlotter(object):
         for this_var in self.var_list_parse:
             soil_lev = None  # none of these are soil variables
             var_obj = self.spinup.parse_var(this_var,
-            lon_idx=self.location.clm_x,
-            lat_idx=self.location.clm_y,
-            soil_lev=soil_lev)
+                                            lon_idx=self.location.clm_x,
+                                            lat_idx=self.location.clm_y,
+                                            soil_lev=soil_lev)
             setattr(self, this_var, var_obj)
 
         C_g_per_mol = 12.01
         mol_per_umol = 1e-6
         s_per_year = 60 * 60 * 24 * 365
         self.FPSN.data = (self.FPSN.data *
-        C_g_per_mol * mol_per_umol * s_per_year)
+                          C_g_per_mol * mol_per_umol * s_per_year)
         self.FPSN.units = 'g C m-2 yr-1'
 
         # populate latent heat
         self.LE = CLM_var(varname='LE',
-        varname_long='latent heat flux',
-        data=mm_s_2_w_m2_s(self.QSOIL.data +
-                           self.QVEGE.data +
-                           self.QVEGT.data),
-        time=self.QSOIL.time,
-        units='W/m^2',
-        missing_value=self.QSOIL.missing_value)
+                          varname_long='latent heat flux',
+                          data=mm_s_2_w_m2_s(self.QSOIL.data +
+                                             self.QVEGE.data +
+                                             self.QVEGT.data),
+                          time=self.QSOIL.time,
+                          units='W/m^2',
+                          missing_value=self.QSOIL.missing_value)
         s_per_day = 24.0 * 60.0 * 60.0
         self.QRUNOFF.data = self.QRUNOFF.data * s_per_day
         self.QRUNOFF.units = 'mm/day'
@@ -323,21 +327,49 @@ class AnnualMeanPlotter(object):
     def _setup_plot(self):
         self.fig, self.ax = plt.subplots(nrows=3, ncols=2, figsize=(8.5, 11))
         self.fig.text(0.5, 0.95, '{}'.format(self.location.name),
-        verticalalignment='top',
-        horizontalalignment='center',
-        size='large')
+                      verticalalignment='top',
+                      horizontalalignment='center',
+                      size='large')
 
-    def plot(self):
+    def plot(self, cycle='annual'):
         """draw the six panel plot
+
+        ARGS:
+        cycle ({"annual"} | "monthly"): if annual (default), plots a
+        time series of annual means.  If "monthly", plots the monthly
+        means calulated across the entire time series.
         """
         lw = 2.0  # line width
         self._setup_plot()
         for this_var, this_ax in zip(self.var_list_plot, self.ax.flatten()):
-            # the last year of the spinup only went through October so
-            # year 51 is not a full year annual average
-            mm = getattr(self, this_var).monthly_mean()
-            this_ax.plot(mm.index, mm.values, label='monthly mean',
-            linewidth=lw)
+            if cycle is "monthly":
+                mean_vals = getattr(self, this_var).monthly_mean()
+                label_str = 'monthly mean'
+            elif cycle is "annual":
+                # the last year of the spinup only went through
+                # October so year 51 is not a full year annual average
+                mean_vals = getattr(self, this_var).annual_mean()[:50]
+                label_str = 'annual mean '
+            else:
+                raise ValueError('cycle must be "annual" or "monthly"')
+            this_ax.plot(mean_vals.index, mean_vals.values, label=label_str,
+                         linewidth=lw)
+            if cycle is "annual":
+                this_ax.plot(mean_vals.index,
+                             pd.rolling_mean(mean_vals.values, window=10),
+                             '--', label='10-year running mean',
+                             linewidth=lw)
+                if self.location.name == "ARM Southern Great Plains":
+                    armobs = self.get_ARM_data()
+                    self.ax[0, 0].plot(armobs.index, armobs.H, 'k:',
+                                       label='observed',
+                                       linewidth=lw)
+                    self.ax[0, 1].plot(armobs.index, armobs.LE, 'k:',
+                                       linewidth=lw)
+                    # put a dummy line in the axes from which the
+                    # legend is drawn
+                    dummy = self.ax[-1, 0].plot([], [], 'k:', label='observed',
+                                                linewidth=lw)
             # don't place parenthetical part of long name in plot title
             t_str = getattr(self, this_var).varname_long.split("(")[0]
             this_ax.set_title(t_str)
@@ -400,11 +432,11 @@ def plot_monthly_timeseries(spinup_run, var, location):
 
     ARGS:
     spinup_run (CLM_spinup_analyzer): object of class
-        CLM_spinup_analyzer describing the spinup run
+    CLM_spinup_analyzer describing the spinup run
     var (CLM_var): object of class CLM_var containing the data and
-        metadata to be plotted
+    metadata to be plotted
     location (Location): object of class Location describing the
-        location of the data to be plotted
+    location of the data to be plotted
     """
     months = range(1, 13)
     nrows = np.int(np.ceil(len(months) / 2))
@@ -498,22 +530,24 @@ def test_tstamp_parse():
     return var
 
 
-def annual_mean_plots_main():
+def annual_cycle_plots_main():
     (CLM_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
     for this_site in (santacruz, mclaughlin,
                       sierra_foothills, loma_ridge, ARM_SGP):
-    # for this_site in (ARM_SGP, ):
+        # for this_site in (ARM_SGP, ):
         print 'plotting summary for {}'.format(this_site.name)
-        amp = AnnualMeanPlotter(CLM_f05_g16, this_site)
-        amp.get_data()
-        amp.plot()
-        amp.fig.savefig(os.path.join(os.getenv('HOME'),
-                                     'plots',
-                                     'CLM_f05_g16',
-                                     '{}_spinup_monthly_means.pdf'.format(
-                                         this_site.name.replace(' ', ''))))
+        acp = AnnualCyclePlotter(CLM_f05_g16, this_site)
+        acp.get_data()
+        for this_cycle in ['annual', 'monthly']:
+            acp.plot(this_cycle)
+            acp.fig.savefig(os.path.join(os.getenv('HOME'),
+                                         'plots',
+                                         'CLM_f05_g16',
+                                         '{}_spinup_{}_means.pdf'.format(
+                        this_site.name.replace(' ', ''),
+                        this_cycle)))
 
 if __name__ == "__main__":
     # plot_CLMf05g16_monthly_timeseries_main()
-    foo = annual_mean_plots_main()
+    foo = annual_cycle_plots_main()
