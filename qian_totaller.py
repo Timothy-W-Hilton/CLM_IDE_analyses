@@ -90,7 +90,7 @@ class QianTotaller(object):
             # append monthly total to one netcdf file
             try:
                 cmd = (['ncecat', '-c', '-O',
-                        '-v', 'time', 'LATIXY', 'LONGSY', 'PRECTmms'] +
+                        '-v', 'time,PRECTmms'] +
                        fnames_mon_totals)
                 cmd.append(os.path.join(self.output_dir, self.output_fname))
                 print " ".join(cmd)
@@ -98,11 +98,24 @@ class QianTotaller(object):
             except subprocess.CalledProcessError as exc:
                 print output
                 print 'command failed: {}'.format(" ".join(exc.cmd))
+            # put lat, lon into the concatenated variable
+            try:
+                cmd = ['ncks', '-A', '-v', 'LATIXY,LONGXY',
+                       fnames_mon_totals[0],
+                       os.path.join(self.output_dir, self.output_fname)]
+                print " ".join(cmd)
+                subprocess.check_call(cmd)
+            except subprocess.CalledProcessError as exc:
+                print output
+                print 'command failed: {}'.format(" ".join(exc.cmd))
         except:
             # clean up temporary files if something failed
-            # print "removing {}".format(tmpdir)
-            # rmtree(tmpdir)
+            print "removing {}".format(tmpdir)
+            rmtree(tmpdir)
             raise
+        else:
+            print "removing {}".format(tmpdir)
+            rmtree(tmpdir)
 
 
 if __name__ == "__main__":
