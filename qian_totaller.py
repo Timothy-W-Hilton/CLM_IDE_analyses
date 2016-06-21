@@ -60,9 +60,10 @@ class QianTotaller(object):
         """total the data fields
         """
         tmpdir = tempfile.mkdtemp(dir=os.getenv('SCRATCH'))
-        filenames_mon_totals = []
+        fnames_mon_totals = []
         try:
-            for this_file in self.filenames[:1]:
+            for this_file in self.filenames[:2]:
+                # make "time" the record dimension
                 this_file_with_recdim = os.path.join(
                     tmpdir,
                     os.path.basename(this_file))
@@ -73,21 +74,34 @@ class QianTotaller(object):
                     subprocess.check_call(cmd_add_rec_dim)
                 except subprocess.CalledProcessError, exc:
                     print 'command failed: {}'.format(exc.cmd)
-                this_file_mon_tot = this_file_with_recdim.replace('.nc',
-                                                                  '_tot.nc')
+                # calculate monthly total pcp
+                fnames_mon_totals.append(
+                    this_file_with_recdim.replace('.nc', '_tot.nc'))
                 cmd_get_tot = ["ncwa", "-h", "-O", "-y", "ttl",
                                '-a', 'time',  # aggregate over time only
                                '-v', 'LATIXY,LONGXY,PRECTmms',
-                               this_file, this_file_mon_tot]
+                               this_file, fnames_mon_totals[-1]]
                 print " ".join(cmd_get_tot)
                 try:
                     output = subprocess.check_call(cmd_get_tot)
                 except subprocess.CalledProcessError as exc:
                     print output
                     print 'command failed: {}'.format(" ".join(exc.cmd))
+            # append monthly total to one netcdf file
+            try:
+                cmd = (['ncecat', '-c', '-O',
+                        '-v', 'time', 'LATIXY', 'LONGSY', 'PRECTmms'] +
+                       fnames_mon_totals)
+                cmd.append(os.path.join(self.output_dir, self.output_fname))
+                print " ".join(cmd)
+                output = subprocess.check_call(cmd)
+            except subprocess.CalledProcessError as exc:
+                print output
+                print 'command failed: {}'.format(" ".join(exc.cmd))
         except:
-            print "removing {}".format(tmpdir)
-            rmtree(tmpdir)
+            # clean up temporary files if something failed
+            # print "removing {}".format(tmpdir)
+            # rmtree(tmpdir)
             raise
 
 
