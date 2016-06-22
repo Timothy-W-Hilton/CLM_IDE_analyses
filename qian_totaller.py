@@ -62,7 +62,7 @@ class QianTotaller(object):
         tmpdir = tempfile.mkdtemp(dir=os.getenv('SCRATCH'))
         fnames_mon_totals = []
         try:
-            for this_file in self.filenames[:2]:
+            for i, this_file in enumerate(self.filenames[:2]):
                 # make "time" the record dimension
                 this_file_with_recdim = os.path.join(
                     tmpdir,
@@ -87,6 +87,21 @@ class QianTotaller(object):
                 except subprocess.CalledProcessError as exc:
                     print output
                     print 'command failed: {}'.format(" ".join(exc.cmd))
+                # fix the time variable to contain months since 1 Jan 1948
+                # works from command line: ncap2 -O -s 'time={1}' clmforc.Qian.c2006.T62.Prec.1948-01_tot.nc clmforc.Qian.c2006.T62.Prec.1948-01_tot.nc
+                # cmd_fix_time = ['ncap2', '-O', '-s', "'time={" + str(i) + "}'",
+                #                fnames_mon_totals[-1], fnames_mon_totals[-1]]
+                # print " ".join(cmd_fix_time)
+                cmd_fix_time = "ncap2 -O -s 'time={{{0}}}' {1} {2}".format(
+                    i, fnames_mon_totals[-1], fnames_mon_totals[-1])
+
+                print cmd_fix_time
+                try:
+                    output = subprocess.check_output(cmd_fix_time, shell=True)
+                except subprocess.CalledProcessError as exc:
+                    print output
+                    print 'command failed: {}'.format(" ".join(exc.cmd))
+                    raise
             # append monthly total to one netcdf file
             try:
                 cmd = (['ncecat', '-c', '-O',
@@ -110,13 +125,13 @@ class QianTotaller(object):
                 print 'command failed: {}'.format(" ".join(exc.cmd))
         except:
             # clean up temporary files if something failed
-            print "removing {}".format(tmpdir)
-            rmtree(tmpdir)
+            # print "removing {}".format(tmpdir)
+            # rmtree(tmpdir)
             raise
         else:
-            print "removing {}".format(tmpdir)
-            rmtree(tmpdir)
-
+            # print "removing {}".format(tmpdir)
+            # rmtree(tmpdir)
+            print "done!"
 
 if __name__ == "__main__":
 
