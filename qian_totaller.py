@@ -10,6 +10,7 @@ Data and Evaluations, Journal of Hydrometeorology, 7(5), 953
 """
 
 import os
+import sys
 import netCDF4
 import tempfile
 import subprocess
@@ -70,10 +71,7 @@ class QianTotaller(object):
                 cmd_add_rec_dim = ['ncks', '-O', '--mk_rec_dmn', 'time',
                                    this_file,
                                    this_file_with_recdim]
-                try:
-                    subprocess.check_call(cmd_add_rec_dim)
-                except subprocess.CalledProcessError, exc:
-                    print 'command failed: {}'.format(exc.cmd)
+                subp_wrapper(cmd_add_rec_dim)
                 # calculate monthly total pcp
                 fnames_mon_totals.append(
                     this_file_with_recdim.replace('.nc', '_tot.nc'))
@@ -124,16 +122,43 @@ class QianTotaller(object):
                 print 'command failed: {}'.format(" ".join(exc.cmd))
         except:
             # clean up temporary files if something failed
+            e = sys.exc_info()[0]
+            print "Error: {}".format(e)
             print "removing {}".format(tmpdir)
             rmtree(tmpdir)
-            raise
         else:
             print "removing {}".format(tmpdir)
             rmtree(tmpdir)
             print "done!"
 
-if __name__ == "__main__":
 
+def subp_wrapper(cmd_args, verbose=False):
+    """wrapper around subprocess.check_call with exception handling
+
+    ARGS:
+        cmd_args (list): list of strings containing command and
+            arguments to pass to subprocess.check_call
+        verbose (boolean): if True, print the output of the command
+            even if it completes successfully
+    """
+    print " ".join(cmd_args)
+    try:
+        output = subprocess.check_call(cmd_args)
+    except subprocess.CalledProcessError as e:
+        print 'command failed: {}'.format(" ".join(exc.cmd))
+        print exc.output
+        raise
+    except OSError as e:
+        print "OSError: [Errno {}] {}".format(e.errno, e.strerror)
+        if e.errno == 2:
+            print "are NCO executables available on this system?"
+    else:
+        if verbose:
+            print output
+
+if __name__ == "__main__":
+    """calculate monthly total pcp for Qian (2006) pcp on NERSC machine
+    """
     qian_data_dir = os.path.join('/', 'project', 'projectdirs',
                                  'ccsm1', 'inputdata', 'atm', 'datm7',
                                  'atm_forcing.datm7.Qian.T62.c080727',
