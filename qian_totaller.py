@@ -88,12 +88,11 @@ class QianTotaller(object):
                     print output
                     print 'command failed: {}'.format(" ".join(exc.cmd))
                 # fix the time variable to contain months since 1 Jan 1948
-                # works from command line: ncap2 -O -s 'time={1}' clmforc.Qian.c2006.T62.Prec.1948-01_tot.nc clmforc.Qian.c2006.T62.Prec.1948-01_tot.nc
-                # cmd_fix_time = ['ncap2', '-O', '-s', "'time={" + str(i) + "}'",
-                #                fnames_mon_totals[-1], fnames_mon_totals[-1]]
-                # print " ".join(cmd_fix_time)
-                cmd_fix_time = "ncap2 -O -s 'time={{{0}}}' {1} {2}".format(
-                    i, fnames_mon_totals[-1], fnames_mon_totals[-1])
+                cmd_fix_time = (
+                    "ncap2 -O "
+                    "-s 'time={{{0}}}' "
+                    "-s 'time@units=\"months since 1948-01-01 00:00:00\"'  {1} {2} ".format(
+                        i, fnames_mon_totals[-1], fnames_mon_totals[-1]))
 
                 print cmd_fix_time
                 try:
