@@ -62,7 +62,7 @@ class QianTotaller(object):
         tmpdir = tempfile.mkdtemp(dir=os.getenv('SCRATCH'))
         fnames_mon_totals = []
         try:
-            for i, this_file in enumerate(self.filenames[:2]):
+            for i, this_file in enumerate(self.filenames):
                 # make "time" the record dimension
                 this_file_with_recdim = os.path.join(
                     tmpdir,
@@ -91,9 +91,9 @@ class QianTotaller(object):
                 cmd_fix_time = (
                     "ncap2 -O "
                     "-s 'time={{{0}}}' "
-                    "-s 'time@units=\"months since 1948-01-01 00:00:00\"'  {1} {2} ".format(
+                    "-s 'time@units=\"months since "
+                    "1948-01-01 00:00:00\"'  {1} {2} ".format(
                         i, fnames_mon_totals[-1], fnames_mon_totals[-1]))
-
                 print cmd_fix_time
                 try:
                     output = subprocess.check_output(cmd_fix_time, shell=True)
@@ -124,12 +124,12 @@ class QianTotaller(object):
                 print 'command failed: {}'.format(" ".join(exc.cmd))
         except:
             # clean up temporary files if something failed
-            # print "removing {}".format(tmpdir)
-            # rmtree(tmpdir)
+            print "removing {}".format(tmpdir)
+            rmtree(tmpdir)
             raise
         else:
-            # print "removing {}".format(tmpdir)
-            # rmtree(tmpdir)
+            print "removing {}".format(tmpdir)
+            rmtree(tmpdir)
             print "done!"
 
 if __name__ == "__main__":
