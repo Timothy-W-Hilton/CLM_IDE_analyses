@@ -59,11 +59,16 @@ class QianTotaller(object):
 
     def totaller(self):
         """total the data fields
+
+        uses a series of calls to NCO tools to total the precip.
+        Implementing this in pure Python (e.g. using netCDF4) would
+        require a lot of coding to preserve the metadata in the Qian
+        et al netCDF files.  Using NCO tools preserves the metadata.
         """
         tmpdir = tempfile.mkdtemp(dir=os.getenv('SCRATCH'))
         fnames_mon_totals = []
         try:
-            for i, this_file in enumerate(self.filenames):
+            for i, this_file in enumerate(self.filenames[:5]):
                 # make "time" the record dimension
                 this_file_with_recdim = os.path.join(
                     tmpdir,
@@ -79,12 +84,7 @@ class QianTotaller(object):
                                '-a', 'time',  # aggregate over time only
                                '-v', 'LATIXY,LONGXY,PRECTmms',
                                this_file, fnames_mon_totals[-1]]
-                print " ".join(cmd_get_tot)
-                try:
-                    output = subprocess.check_call(cmd_get_tot)
-                except subprocess.CalledProcessError as exc:
-                    print output
-                    print 'command failed: {}'.format(" ".join(exc.cmd))
+                subp_wrapper(cmd_get_tot)
                 # fix the time variable to contain months since 1 Jan 1948
                 cmd_fix_time = (
                     "ncap2 -O "
@@ -100,32 +100,24 @@ class QianTotaller(object):
                     print 'command failed: {}'.format(" ".join(exc.cmd))
                     raise
             # append monthly total to one netcdf file
-            try:
-                cmd = (['ncecat', '-c', '-O',
-                        '-v', 'time,PRECTmms'] +
-                       fnames_mon_totals)
-                cmd.append(os.path.join(self.output_dir, self.output_fname))
-                print " ".join(cmd)
-                output = subprocess.check_call(cmd)
-            except subprocess.CalledProcessError as exc:
-                print output
-                print 'command failed: {}'.format(" ".join(exc.cmd))
+            cmd_concat = (['ncecat', '-c', '-O',
+                    '-v', 'time,PRECTmms'] +
+                   fnames_mon_totals)
+            cmd_concat.append(os.path.join(self.output_dir, self.output_fname))
+            subp_wrapper(cmd_concat)
             # put lat, lon into the concatenated variable
-            try:
-                cmd = ['ncks', '-A', '-v', 'LATIXY,LONGXY',
-                       fnames_mon_totals[0],
-                       os.path.join(self.output_dir, self.output_fname)]
-                print " ".join(cmd)
-                subprocess.check_call(cmd)
-            except subprocess.CalledProcessError as exc:
-                print output
-                print 'command failed: {}'.format(" ".join(exc.cmd))
+            cmd_latlon = ['ncks', '-A', '-v', 'LATIXY,LONGXY',
+                   fnames_mon_totals[0],
+                   os.path.join(self.output_dir, self.output_fname)]
+            subp_wrapper(cmd_latlon)
         except:
-            # clean up temporary files if something failed
+            # write message and clean up temporary files if something
+            # failed
             e = sys.exc_info()[0]
             print "Error: {}".format(e)
             print "removing {}".format(tmpdir)
             rmtree(tmpdir)
+            raise
         else:
             print "removing {}".format(tmpdir)
             rmtree(tmpdir)
