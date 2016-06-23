@@ -3,7 +3,7 @@ matplotlib.use('AGG')
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-import reverse_geocoder as rg
+from geopy.geocoders import Nominatim
 import netCDF4
 from datetime import datetime
 from mpl_toolkits.basemap import Basemap
@@ -40,6 +40,6 @@ if __name__ == "__main__":
     m.drawparallels(np.arange(-80,81,20),labels=[1,1,0,0])
     m.drawmeridians(np.arange(0,360,60),labels=[0,0,0,1])
     m.scatter(lon2, lat, latlon=True, marker='x', color='k', s=2)
-    m.scatter(-100, 40, latlon=True, marker='o', color='r', s=20)
+    m.scatter(lon2[usamask], lat[usamask], latlon=True, marker='x', color='r', s=2)
     fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest', 'usamap.png'))
     plt.close(fig)
