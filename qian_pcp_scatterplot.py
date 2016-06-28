@@ -108,11 +108,12 @@ class QianMonthlyPCPData(object):
         for t in np.arange(ntime)[:5]:
             if np.mod(t, 100) == 0:
                 print t, datetime.now()
-            finterp = interpolate.RectBivariateSpline(self.lat[:, 0],
-                                                      self.lon[0, :],
-                                                      self.pcp_all[t, ...])
+            finterp = interpolate.RectBivariateSpline(
+                self.lon[0, :],
+                self.lat[:, 0],
+                np.transpose(self.pcp_all[t, ...]))
             self.pcp[t, ...] = finterp.ev(dlon, dlat)
-
+            self.pcp[self.pcp < 0] = 0.0
 
 def check_results(qmd, dlon, dlat):
     fig, ax = plt.subplots(2, 1, figsize=(8.5, 11))
@@ -129,6 +130,9 @@ def check_results(qmd, dlon, dlat):
     fig.savefig(os.path.join(os.getenv('HOME'), 'plots',
                              'qian_pcpinterp_test.png'))
     plt.close(fig)
+
+    print "T62 min, max: ", qmd.pcp_all[0, ...].min(), qmd.pcp_all[0, ...].max()
+    print "0.5 deg min, max: ", qmd.pcp[0, ...].min(), qmd.pcp[0, ...].max()
 
 
 if __name__ == "__main__":
