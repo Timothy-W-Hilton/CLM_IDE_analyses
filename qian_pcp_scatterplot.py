@@ -5,6 +5,8 @@ ZWT: total water table depth
 TWS: total water storage
 PCP: precipitation
 """
+import matplotlib
+matplotlib.use('AGG')
 
 import os
 import netCDF4
@@ -102,12 +104,31 @@ class QianMonthlyPCPData(object):
         nlon = dlon.shape[0]
         nlat = dlat.shape[1]
         self.pcp = np.zeros((ntime, nlon, nlat))
-        for t in np.arange(ntime):
-            print datetime.now()
+
+        for t in np.arange(ntime)[:5]:
+            if np.mod(t, 100) == 0:
+                print t, datetime.now()
             finterp = interpolate.RectBivariateSpline(self.lat[:, 0],
                                                       self.lon[0, :],
                                                       self.pcp_all[t, ...])
-            self.pcp[t, ...] = finterp(dlon, dlat)
+            self.pcp[t, ...] = finterp.ev(dlon, dlat)
+
+
+def check_results(qmd, dlon, dlat):
+    fig, ax = plt.subplots(2, 1, figsize=(8.5, 11))
+    cmap=plt.get_cmap('Blues')
+    cm = ax[0].pcolormesh(qmd.lon, qmd.lat, qmd.pcp_all[0, ...],
+                          cmap=cmap)
+    for this_ax in ax:
+        this_ax.set_xlabel('lon E')
+        this_ax.set_ylabel('lat N')
+    cb = plt.colorbar(cm, ax=ax[0])
+    cm = ax[1].pcolormesh(dlon, dlat, qmd.pcp[0, ...],
+                          cmap=cmap)
+    cb = plt.colorbar(cm, ax=ax[1])
+    fig.savefig(os.path.join(os.getenv('HOME'), 'plots',
+                             'qian_pcpinterp_test.png'))
+    plt.close(fig)
 
 
 if __name__ == "__main__":
@@ -124,3 +145,4 @@ if __name__ == "__main__":
                                       'hist',
                                       'CLM_f05_g16.clm2.h0.0050-01.nc'))
     qmd.interpolate(d.get_lon(), d.get_lat())
+    check_results(qmd, d.get_lon(), d.get_lat())
