@@ -1,5 +1,5 @@
 """a set of tools useful for parsing and returning descriptions of the
-STEM domain (grid cell longitude and latitude coordinates, grid cell
+CLM domain (grid cell longitude and latitude coordinates, grid cell
 vertical coordinates), and also for some domain-oriented calculations
 (is a point inside or outside of the domain, etc.)
 """
@@ -10,7 +10,6 @@ import matplotlib
 import numpy as np
 import warnings
 import netCDF4
-import stem_pytools.STEM_parsers as sp
 from mpl_toolkits import basemap
 from scipy.spatial import cKDTree
 
@@ -55,11 +54,11 @@ class CLM_Domain(object):
 
     def get_lat(self):
         """return the CLM latitude grid"""
-        return(self.STEM_lat)
+        return(self.lat)
 
     def get_lon(self):
         """return the CLM longitude grid"""
-        return(self.STEM_lon)
+        return(self.lon)
 
     def get_topo(self):
         """return the CLM topo grid"""
@@ -87,7 +86,7 @@ class CLM_Domain(object):
         # convert spherical lon, lat coordinates to cartesian coords. Note
         # that these x,y,z are 3-dimensional cartesian coordinates of
         # positions on a sphere, and are thus different from the x,y,z
-        # *indices* of the STEM grid.
+        # *indices* of the CLM grid.
         x, y, z = lon_lat_to_cartesian(lon, lat)
         xs, ys, zs = lon_lat_to_cartesian(self.lon, self.lat)
 
@@ -140,7 +139,7 @@ def lon_lat_to_cartesian(lon, lat, R=1):
 def demo():
     """Demonstrates using the domain module to find the indices of a
     couple of key locations on a 1 degree by 1 degree Northern
-    Hemisphere grid that are inside the area specifed by a STEM topo
+    Hemisphere grid that are inside the area specifed by a CLM topo
     file.
 
     """
@@ -156,17 +155,3 @@ def demo():
     idx = domain.find_nearest_xy(np.array((santacruz.lon)),
                                  np.array((santacruz.lat)))
     return idx
-    # mymap = domain.get_mapobj()
-    # mymap.drawcoastlines()
-    # mymap.plot(domain.bnd_lon, domain.bnd_lat, latlon=True)
-    # mymap.scatter(sib_lon,
-    #               sib_lat,
-    #               latlon=True,
-    #               c='gray',
-    #               facecolors='none',
-    #               marker='o')
-    # mymap.scatter(sib_lon[in_STEM_domain],
-    #               sib_lat[in_STEM_domain],
-    #               latlon=True,
-    #               c='red',
-    #               marker='x')
