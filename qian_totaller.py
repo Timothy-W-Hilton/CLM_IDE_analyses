@@ -100,7 +100,7 @@ class QianTotaller(object):
                     print 'command failed: {}'.format(" ".join(exc.cmd))
                     raise
             # append monthly total to one netcdf file
-            cmd_concat = (['ncecat', '-c', '-O',
+            cmd_concat = (['ncecat', '-c', '-O', '--rcd_nm', 'time',
                     '-v', 'time,PRECTmms'] +
                    fnames_mon_totals)
             cmd_concat.append(os.path.join(self.output_dir, self.output_fname))
@@ -120,7 +120,7 @@ class QianTotaller(object):
             raise
         else:
             print "removing {}".format(tmpdir)
-            rmtree(tmpdir)
+            # rmtree(tmpdir)
             print "done!"
 
 
