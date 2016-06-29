@@ -68,7 +68,7 @@ class QianTotaller(object):
         tmpdir = tempfile.mkdtemp(dir=os.getenv('SCRATCH'))
         fnames_mon_totals = []
         try:
-            for i, this_file in enumerate(self.filenames[:5]):
+            for i, this_file in enumerate(self.filenames):
                 # make "time" the record dimension
                 this_file_with_recdim = os.path.join(
                     tmpdir,
@@ -110,6 +110,35 @@ class QianTotaller(object):
                    fnames_mon_totals[0],
                    os.path.join(self.output_dir, self.output_fname)]
             subp_wrapper(cmd_latlon)
+            # produce annual total from the monthly totals
+            fname_annual = os.path.join(self.output_dir,
+                                        self.output_fname.replace('monthly',
+                                                                  'annual'))
+            cmd_annual = 'ncra -O --mro -y ttl -d time,1,,12,12 {} {}'.format(
+                os.path.join(self.output_dir, self.output_fname),
+                fname_annual)
+            print cmd_annual
+            try:
+                output = subprocess.check_output(cmd_annual, shell=True)
+            except subprocess.CalledProcessError as exc:
+                print output
+                print 'command failed: {}'.format(" ".join(exc.cmd))
+                raise
+            # fix time in the annual file to contain years since 1948
+            cmd_fix_time = (
+                "ncap2 -O "
+                "-s 'time=time/12' "
+                "-s 'time@units=\"years since "
+                "1948-01-01 00:00:00\"'  {0} {1} ".format(
+                    fname_annual, fname_annual))
+            print cmd_fix_time
+            try:
+                output = subprocess.check_output(cmd_fix_time, shell=True)
+            except subprocess.CalledProcessError as exc:
+                print output
+                print 'command failed: {}'.format(" ".join(exc.cmd))
+                raise
+
         except:
             # write message and clean up temporary files if something
             # failed
@@ -120,7 +149,7 @@ class QianTotaller(object):
             raise
         else:
             print "removing {}".format(tmpdir)
-            # rmtree(tmpdir)
+            rmtree(tmpdir)
             print "done!"
 
 
@@ -137,8 +166,8 @@ def subp_wrapper(cmd_args, verbose=False):
     try:
         output = subprocess.check_call(cmd_args)
     except subprocess.CalledProcessError as e:
-        print 'command failed: {}'.format(" ".join(exc.cmd))
-        print exc.output
+        print 'command failed: {}'.format(" ".join(e.cmd))
+        print e.output
         raise
     except OSError as e:
         print "OSError: [Errno {}] {}".format(e.errno, e.strerror)
