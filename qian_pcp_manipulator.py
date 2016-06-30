@@ -11,11 +11,14 @@ matplotlib.use('AGG')
 import os
 import netCDF4
 import numpy as np
+from numpy import ma
 import matplotlib.pyplot as plt
 from scipy import interpolate
 from datetime import datetime
+from mpl_toolkits.basemap import Basemap
 from RegionTester.region_tester import InUSState
 from clm_domain import CLM_Domain
+from IDE_locations import CLMf05g16_get_spatial_info
 
 class CalMask(object):
     """mask to determine if a lat/lon points are within California
@@ -70,7 +73,7 @@ class QianMonthlyPCPData(object):
         """read pcp data from netcdf file
         """
         nc = netCDF4.Dataset(self.fname, 'r')
-        self.pcp_all = nc.variables['PRECTmms'][:]
+        self.pcp_all = nc.variables['PRECTmms'][:] * 21600
         self.lon = nc.variables['LONGXY'][...]
         self.lat = nc.variables['LATIXY'][...]
         nc.close()
@@ -105,7 +108,7 @@ class QianMonthlyPCPData(object):
         nlat = dlat.shape[1]
         self.pcp = np.zeros((ntime, nlon, nlat))
 
-        for t in np.arange(ntime)[:5]:
+        for t in np.arange(ntime):
             if np.mod(t, 100) == 0:
                 print t, datetime.now()
             finterp = interpolate.RectBivariateSpline(
@@ -114,6 +117,29 @@ class QianMonthlyPCPData(object):
                 np.transpose(self.pcp_all[t, ...]))
             self.pcp[t, ...] = finterp.ev(dlon, dlat)
             self.pcp[self.pcp < 0] = 0.0
+
+
+    def show_reduction_pct(self, d):
+        """d: CLM_domain object
+        """
+        pct = (np.percentile(a=self.pcp, q=1, axis=0) /
+               np.percentile(a=self.pcp, q=50, axis=0))
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        m = Basemap(llcrnrlon=-180, llcrnrlat=-80,
+                    urcrnrlon=180, urcrnrlat=80,
+                    projection='mill',
+                    ax=ax)
+        m.drawcoastlines(linewidth=1.25)
+        m.fillcontinents(color='0.8', zorder=0)
+        m.drawparallels(np.arange(-80,81,20),labels=[1,1,0,0])
+        m.drawmeridians(np.arange(0,360,60),labels=[0,0,0,1])
+        cm = m.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(pct),
+                          cmap=plt.get_cmap('Blues'),
+                          latlon=True)
+        cb = plt.colorbar(cm, ax=ax)
+        fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
+                                 'IDE_pct_map.png'))
+        plt.close(fig)
 
 def check_results(qmd, dlon, dlat):
     fig, ax = plt.subplots(2, 1, figsize=(8.5, 11))
@@ -135,9 +161,23 @@ def check_results(qmd, dlon, dlat):
     print "0.5 deg min, max: ", qmd.pcp[0, ...].min(), qmd.pcp[0, ...].max()
 
 
+
+
+def site_summary(qmd, site):
+
+    pcp = qmd.pcp[:, site.clm_y, site.clm_x]
+    fig, ax = plt.subplots(1, 1, figsize=[8, 8])
+    ax.scatter(np.arange(len(pcp)) + 1948, pcp)
+    ax.set_xlabel('year')
+    ax.set_ylabel('pcp (mm)')
+    fig.savefig(os.path.join(os.getenv('HOME'), 'plots',
+                             "{}_pcp.pdf".format(site.name.replace(' ', ''))))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     pcp_ncfile = os.path.join(os.getenv('SCRATCH'),
-                              'qian_pcp_monthly_totals.nc')
+                              'qian_pcp_annual_totals.nc')
     qmd = QianMonthlyPCPData(pcp_ncfile)
     qmd.read_nc()
     d = CLM_Domain(fname=os.path.join('/', 'global',
@@ -149,4 +189,10 @@ if __name__ == "__main__":
                                       'hist',
                                       'CLM_f05_g16.clm2.h0.0050-01.nc'))
     qmd.interpolate(d.get_lon(), d.get_lat())
-    check_results(qmd, d.get_lon(), d.get_lat())
+
+    (domain_f05_g16, santacruz, mclaughlin,
+     sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
+
+    #how to index:
+    qmd.pcp[:, santacruz.clm_y, santacruz.clm_x]
+    qmd.pcp[:, ARM_SGP.clm_y, ARM_SGP.clm_x]
