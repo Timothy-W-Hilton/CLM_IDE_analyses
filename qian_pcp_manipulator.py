@@ -120,15 +120,16 @@ class QianMonthlyPCPData(object):
             self.pcp[self.pcp < 0] = 0.0
 
 
-    def show_reduction_pct(self, d):
+    def show_reduction_pct(self, d, locations=None):
         """d: CLM_domain object
+        locations: list of Location objects
         """
         pct = (np.percentile(a=self.pcp, q=1, axis=0) /
                np.percentile(a=self.pcp, q=50, axis=0))
-        fig = plt.figure(figsize=(8, 8))
-        ax1 = plt.subplot2grid((6, 11), (0, 0), colspan=5, rowspan=5)
-        ax2 = plt.subplot2grid((6, 11), (0, 6), colspan=5, rowspan=5)
-        ax3 = plt.subplot2grid((6, 11), (5, 0), colspan=11, rowspan=1)
+        fig = plt.figure(figsize=(12, 6))
+        ax1 = plt.subplot2grid((60, 11), (0, 0), colspan=5, rowspan=50)
+        ax2 = plt.subplot2grid((60, 11), (0, 6), colspan=5, rowspan=50)
+        ax3 = plt.subplot2grid((60, 11), (52, 0), colspan=11, rowspan=8)
 
         cmap, norm = colormap_nlevs.setup_colormap(0.0, 1.0, nlevs=11,
                                                    cmap=plt.get_cmap('Blues'),
@@ -143,8 +144,16 @@ class QianMonthlyPCPData(object):
                              cmap=cmap,
                              norm=norm,
                              latlon=True)
+        if locations is not None:
+            for here in locations:
+                pt = mcal.scatter(here.lon[0], here.lat[0], latlon=True,
+                                  marker='*', s=100, c='r')
+                ax2.annotate(s="{:0.2f}".format(pct[here.clm_y, here.clm_x]),
+                             xy=mcal(here.lon[0], here.lat[0]))
+
         cb = plt.colorbar(cm, cax=ax3,
                           orientation='horizontal')
+        cb.ax.set_xlabel('1948 - 2005 pcp: (1st percentile / 50th percentile)')
         fig.tight_layout()
         fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                                  'IDE_pct_map.png'))
@@ -154,16 +163,17 @@ class QianMonthlyPCPData(object):
 def setup_calmap(ax):
     """basic map of world with parallels, meridians, coastlines
     """
-    m = Basemap(llcrnrlon=-125, llcrnrlat=32,
-                urcrnrlon=-114, urcrnrlat=43,
+    m = Basemap(llcrnrlon=-125, llcrnrlat=30,
+                urcrnrlon=-112, urcrnrlat=43,
                 projection='mill',
                 resolution='h',
                 ax=ax)
     m.drawcoastlines(linewidth=1.25)
     m.fillcontinents(color='0.8', zorder=0)
-    m.drawparallels(np.arange(30, 44, 2), labels=[1,1,0,0])
-    m.drawmeridians(np.arange(-114, -125, 2), labels=[0,0,0,1])
+    m.drawparallels(np.arange(30, 44, 4), labels=[1,0,0,0])
+    m.drawmeridians(np.arange(-125, -110, 5), labels=[0,0,0,1])
     m.drawstates()
+    m.drawcountries()
     return m
 
 def setup_worldmap(ax):
@@ -175,7 +185,7 @@ def setup_worldmap(ax):
                 ax=ax)
     m.drawcoastlines(linewidth=1.25)
     m.fillcontinents(color='0.8', zorder=0)
-    m.drawparallels(np.arange(-80,81,20),labels=[1,1,0,0])
+    m.drawparallels(np.arange(-80,81,20),labels=[0,1,0,0])
     m.drawmeridians(np.arange(0,360,60),labels=[0,0,0,1])
     return m
 
@@ -229,9 +239,12 @@ if __name__ == "__main__":
     qmd.interpolate(d.get_lon(), d.get_lat())
 
     (domain_f05_g16, santacruz, mclaughlin,
-     sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
-    qmd.show_reduction_pct(domain_f05_g16)
-
+     sierra_foothills, loma_ridge, sedgewick,
+     boxsprings, ARM_SGP) = CLMf05g16_get_spatial_info()
+    qmd.show_reduction_pct(domain_f05_g16,
+                           (santacruz, mclaughlin,
+                            sierra_foothills, loma_ridge,
+                            sedgewick, boxsprings))
     #how to index:
     # qmd.pcp[:, santacruz.clm_y, santacruz.clm_x]
     # qmd.pcp[:, ARM_SGP.clm_y, ARM_SGP.clm_x]
