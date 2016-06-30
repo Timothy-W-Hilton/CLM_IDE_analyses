@@ -124,8 +124,8 @@ class QianMonthlyPCPData(object):
         """d: CLM_domain object
         locations: list of Location objects
         """
-        pct = (np.percentile(a=self.pcp, q=1, axis=0) /
-               np.percentile(a=self.pcp, q=50, axis=0))
+        pctl = ma.masked_invalid(np.percentile(a=self.pcp, q=(1, 50), axis=0))
+        pct = pctl[0, ...] / pctl[1, ...]
         fig = plt.figure(figsize=(12, 6))
         ax1 = plt.subplot2grid((60, 11), (0, 0), colspan=5, rowspan=50)
         ax2 = plt.subplot2grid((60, 11), (0, 6), colspan=5, rowspan=50)
