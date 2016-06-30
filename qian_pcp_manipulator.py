@@ -132,7 +132,7 @@ class QianMonthlyPCPData(object):
         ax3 = plt.subplot2grid((60, 11), (52, 0), colspan=11, rowspan=8)
 
         cmap, norm = colormap_nlevs.setup_colormap(0.0, 1.0, nlevs=11,
-                                                   cmap=plt.get_cmap('Blues'),
+                                                   cmap=plt.get_cmap('YlGnBu'),
                                                    extend='neither')
         mworld = setup_worldmap(ax1)
         mcal = setup_calmap(ax2)
@@ -189,36 +189,44 @@ def setup_worldmap(ax):
     m.drawmeridians(np.arange(0,360,60),labels=[0,0,0,1])
     return m
 
-def check_results(qmd, dlon, dlat):
+def check_results(qd, dlon, dlat):
     fig, ax = plt.subplots(2, 1, figsize=(8.5, 11))
     cmap=plt.get_cmap('Blues')
-    cm = ax[0].pcolormesh(qmd.lon, qmd.lat, qmd.pcp_all[0, ...],
+    cm = ax[0].pcolormesh(qd.lon, qd.lat, qd.pcp_all[0, ...],
                           cmap=cmap)
     for this_ax in ax:
         this_ax.set_xlabel('lon E')
         this_ax.set_ylabel('lat N')
     cb = plt.colorbar(cm, ax=ax[0])
-    cm = ax[1].pcolormesh(dlon, dlat, qmd.pcp[0, ...],
+    cm = ax[1].pcolormesh(dlon, dlat, qd.pcp[0, ...],
                           cmap=cmap)
     cb = plt.colorbar(cm, ax=ax[1])
     fig.savefig(os.path.join(os.getenv('HOME'), 'plots',
                              'qian_pcpinterp_test.png'))
     plt.close(fig)
 
-    print "T62 min, max: ", qmd.pcp_all[0, ...].min(), qmd.pcp_all[0, ...].max()
-    print "0.5 deg min, max: ", qmd.pcp[0, ...].min(), qmd.pcp[0, ...].max()
+    print "T62 min, max: ", qd.pcp_all[0, ...].min(), qd.pcp_all[0, ...].max()
+    print "0.5 deg min, max: ", qd.pcp[0, ...].min(), qd.pcp[0, ...].max()
 
 
 
 
-def site_summary(qmd, site):
+def site_summary(qd, site):
 
-    pcp = qmd.pcp[:, site.clm_y, site.clm_x]
+    y, x = (site.clm_y, site.clm_x)
+    pcp = qd.pcp[:, y, x]
+    pctl01, pctl50 = np.percentile(a=qd.pcp[:, y, x], q=(1, 50))
     fig, ax = plt.subplots(1, 1, figsize=[8, 8])
     ax.scatter(np.arange(len(pcp)) + 1948, pcp)
     ax.set_xlabel('year')
     ax.set_ylabel('pcp (mm)')
-    fig.savefig(os.path.join(os.getenv('HOME'), 'plots',
+    plt.axhline(pctl01, color="#1b9e77", linestyle='--', linewidth=2.0,
+                label='1st pctl')
+    plt.axhline(pctl50, color="#d95f02", linestyle='--', linewidth=2.0,
+                label='50th pctl')
+    ax.set_title(site.name)
+    ax.legend(loc='best')
+    fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'pcp_summaries',
                              "{}_pcp.pdf".format(site.name.replace(' ', ''))))
     plt.close(fig)
 
@@ -226,8 +234,8 @@ def site_summary(qmd, site):
 if __name__ == "__main__":
     pcp_ncfile = os.path.join(os.getenv('SCRATCH'),
                               'qian_pcp_annual_totals.nc')
-    qmd = QianMonthlyPCPData(pcp_ncfile)
-    qmd.read_nc()
+    qd = QianMonthlyPCPData(pcp_ncfile)
+    qd.read_nc()
     d = CLM_Domain(fname=os.path.join('/', 'global',
                                       'cscratch1', 'sd',
                                       'twhilton',
@@ -236,15 +244,19 @@ if __name__ == "__main__":
                                       'lnd',
                                       'hist',
                                       'CLM_f05_g16.clm2.h0.0050-01.nc'))
-    qmd.interpolate(d.get_lon(), d.get_lat())
+    qd.interpolate(d.get_lon(), d.get_lat())
 
     (domain_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, sedgewick,
      boxsprings, ARM_SGP) = CLMf05g16_get_spatial_info()
-    qmd.show_reduction_pct(domain_f05_g16,
+    qd.show_reduction_pct(domain_f05_g16,
                            (santacruz, mclaughlin,
                             sierra_foothills, loma_ridge,
                             sedgewick, boxsprings))
+    for this_site in (santacruz, mclaughlin, sierra_foothills,
+                      loma_ridge, sedgewick, boxsprings, ARM_SGP):
+        print "plotting summary: {}".format(this_site.name)
+        site_summary(qd, this_site)
     #how to index:
-    # qmd.pcp[:, santacruz.clm_y, santacruz.clm_x]
-    # qmd.pcp[:, ARM_SGP.clm_y, ARM_SGP.clm_x]
+    # qd.pcp[:, santacruz.clm_y, santacruz.clm_x]
+    # qd.pcp[:, ARM_SGP.clm_y, ARM_SGP.clm_x]
