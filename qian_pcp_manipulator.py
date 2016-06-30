@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 from datetime import datetime
 from mpl_toolkits.basemap import Basemap
+from timutils import colormap_nlevs, colorbar_from_cmap_norm
 from RegionTester.region_tester import InUSState
 from clm_domain import CLM_Domain
 from IDE_locations import CLMf05g16_get_spatial_info
@@ -124,19 +125,24 @@ class QianMonthlyPCPData(object):
         """
         pct = (np.percentile(a=self.pcp, q=1, axis=0) /
                np.percentile(a=self.pcp, q=50, axis=0))
-        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        fig, ax = plt.subplots(2, 1, figsize=(8, 8))
         m = Basemap(llcrnrlon=-180, llcrnrlat=-80,
                     urcrnrlon=180, urcrnrlat=80,
                     projection='mill',
-                    ax=ax)
+                    ax=ax[0])
         m.drawcoastlines(linewidth=1.25)
         m.fillcontinents(color='0.8', zorder=0)
         m.drawparallels(np.arange(-80,81,20),labels=[1,1,0,0])
         m.drawmeridians(np.arange(0,360,60),labels=[0,0,0,1])
+        cmap, norm = colormap_nlevs.setup_colormap(0.0, 1.0, nlevs=11,
+                                                   cmap=plt.get_cmap('Blues'),
+                                                   extend='neither')
         cm = m.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(pct),
-                          cmap=plt.get_cmap('Blues'),
+                          cmap=cmap,
+                          norm=norm,
                           latlon=True)
-        cb = plt.colorbar(cm, ax=ax)
+        cb = plt.colorbar(cm, ax=ax[0],
+                          orientation='horizontal')
         fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                                  'IDE_pct_map.png'))
         plt.close(fig)
@@ -192,7 +198,8 @@ if __name__ == "__main__":
 
     (domain_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, ARM_SGP) = CLMf05g16_get_spatial_info()
+    qmd.show_reduction_pct(domain_f05_g16)
 
     #how to index:
-    qmd.pcp[:, santacruz.clm_y, santacruz.clm_x]
-    qmd.pcp[:, ARM_SGP.clm_y, ARM_SGP.clm_x]
+    # qmd.pcp[:, santacruz.clm_y, santacruz.clm_x]
+    # qmd.pcp[:, ARM_SGP.clm_y, ARM_SGP.clm_x]
