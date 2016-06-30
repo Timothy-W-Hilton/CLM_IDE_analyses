@@ -125,27 +125,59 @@ class QianMonthlyPCPData(object):
         """
         pct = (np.percentile(a=self.pcp, q=1, axis=0) /
                np.percentile(a=self.pcp, q=50, axis=0))
-        fig, ax = plt.subplots(2, 1, figsize=(8, 8))
-        m = Basemap(llcrnrlon=-180, llcrnrlat=-80,
-                    urcrnrlon=180, urcrnrlat=80,
-                    projection='mill',
-                    ax=ax[0])
-        m.drawcoastlines(linewidth=1.25)
-        m.fillcontinents(color='0.8', zorder=0)
-        m.drawparallels(np.arange(-80,81,20),labels=[1,1,0,0])
-        m.drawmeridians(np.arange(0,360,60),labels=[0,0,0,1])
+        fig = plt.figure(figsize=(8, 8))
+        ax1 = plt.subplot2grid((6, 11), (0, 0), colspan=5, rowspan=5)
+        ax2 = plt.subplot2grid((6, 11), (0, 6), colspan=5, rowspan=5)
+        ax3 = plt.subplot2grid((6, 11), (5, 0), colspan=11, rowspan=1)
+
         cmap, norm = colormap_nlevs.setup_colormap(0.0, 1.0, nlevs=11,
                                                    cmap=plt.get_cmap('Blues'),
                                                    extend='neither')
-        cm = m.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(pct),
-                          cmap=cmap,
-                          norm=norm,
-                          latlon=True)
-        cb = plt.colorbar(cm, ax=ax[0],
+        mworld = setup_worldmap(ax1)
+        mcal = setup_calmap(ax2)
+        cm = mworld.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(pct),
+                               cmap=cmap,
+                               norm=norm,
+                               latlon=True)
+        cm = mcal.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(pct),
+                             cmap=cmap,
+                             norm=norm,
+                             latlon=True)
+        cb = plt.colorbar(cm, cax=ax3,
                           orientation='horizontal')
+        fig.tight_layout()
         fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                                  'IDE_pct_map.png'))
         plt.close(fig)
+
+
+def setup_calmap(ax):
+    """basic map of world with parallels, meridians, coastlines
+    """
+    m = Basemap(llcrnrlon=-125, llcrnrlat=32,
+                urcrnrlon=-114, urcrnrlat=43,
+                projection='mill',
+                resolution='h',
+                ax=ax)
+    m.drawcoastlines(linewidth=1.25)
+    m.fillcontinents(color='0.8', zorder=0)
+    m.drawparallels(np.arange(30, 44, 2), labels=[1,1,0,0])
+    m.drawmeridians(np.arange(-114, -125, 2), labels=[0,0,0,1])
+    m.drawstates()
+    return m
+
+def setup_worldmap(ax):
+    """basic map of world with parallels, meridians, coastlines
+    """
+    m = Basemap(llcrnrlon=-180, llcrnrlat=-80,
+                urcrnrlon=180, urcrnrlat=80,
+                projection='mill',
+                ax=ax)
+    m.drawcoastlines(linewidth=1.25)
+    m.fillcontinents(color='0.8', zorder=0)
+    m.drawparallels(np.arange(-80,81,20),labels=[1,1,0,0])
+    m.drawmeridians(np.arange(0,360,60),labels=[0,0,0,1])
+    return m
 
 def check_results(qmd, dlon, dlat):
     fig, ax = plt.subplots(2, 1, figsize=(8.5, 11))
