@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 from datetime import datetime
 from mpl_toolkits.basemap import Basemap
-from timutils import colormap_nlevs, colorbar_from_cmap_norm
+from timutils import colormap_nlevs
 from RegionTester.region_tester import InUSState
 from clm_domain import CLM_Domain
 from IDE_locations import CLMf05g16_get_spatial_info
@@ -41,8 +41,8 @@ class CalMask(object):
         California.get_state_shape('California')
         iscal = np.empty(self.lon.shape, dtype=bool)
         iscal[...] = False
-        for (x, y), this_lon in np.ndenumerate(lon):
-            iscal[x, y] = California.point_inside(lon[x, y], lat[x, y])
+        for (x, y), this_lon in np.ndenumerate(self.lon):
+            iscal[x, y] = California.point_inside(self.lon[x, y], self.lat[x, y])
         return iscal
 
 
