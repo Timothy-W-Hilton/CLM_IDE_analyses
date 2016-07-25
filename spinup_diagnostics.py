@@ -550,4 +550,13 @@ def annual_cycle_plots_main():
 
 if __name__ == "__main__":
     # plot_CLMf05g16_monthly_timeseries_main()
-    foo = annual_cycle_plots_main()
+    # foo = annual_cycle_plots_main()
+    CLM_f05_g16 = CLM_spinup_analyzer(os.path.join('/', 'global',
+                                                   'cscratch1', 'sd',
+                                                   'twhilton',
+                                                   'archive',
+                                                   'CLM_f05_g16',
+                                                   'lnd',
+                                                   'hist'),
+                                      'CLM_f05_g16')
+    wt = CLM_f05_g16.parse_var('WT')

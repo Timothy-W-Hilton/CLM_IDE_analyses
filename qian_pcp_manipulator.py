@@ -159,6 +159,21 @@ class QianMonthlyPCPData(object):
                                  'IDE_pct_map.png'))
         plt.close(fig)
 
+def get_f05g16_pcp():
+    pcp_ncfile = os.path.join(os.getenv('SCRATCH'),
+                              'qian_pcp_monthly_totals.nc')
+    qd = QianMonthlyPCPData(pcp_ncfile)
+    qd.read_nc()
+    d = CLM_Domain(fname=os.path.join('/', 'global',
+                                      'cscratch1', 'sd',
+                                      'twhilton',
+                                      'archive',
+                                      'CLM_f05_g16',
+                                      'lnd',
+                                      'hist',
+                                      'CLM_f05_g16.clm2.h0.0050-01.nc'))
+    qd.interpolate(d.get_lon(), d.get_lat())
+    return qd
 
 def setup_calmap(ax):
     """basic map of world with parallels, meridians, coastlines
@@ -232,20 +247,8 @@ def site_summary(qd, site):
 
 
 if __name__ == "__main__":
-    pcp_ncfile = os.path.join(os.getenv('SCRATCH'),
-                              'qian_pcp_annual_totals.nc')
-    qd = QianMonthlyPCPData(pcp_ncfile)
-    qd.read_nc()
-    d = CLM_Domain(fname=os.path.join('/', 'global',
-                                      'cscratch1', 'sd',
-                                      'twhilton',
-                                      'archive',
-                                      'CLM_f05_g16',
-                                      'lnd',
-                                      'hist',
-                                      'CLM_f05_g16.clm2.h0.0050-01.nc'))
-    qd.interpolate(d.get_lon(), d.get_lat())
 
+    qd = get_f05g16_pcp()
     (domain_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, sedgewick,
      boxsprings, ARM_SGP) = CLMf05g16_get_spatial_info()
