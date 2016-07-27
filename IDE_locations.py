@@ -31,5 +31,12 @@ def CLMf05g16_get_spatial_info():
     # (http://www.ucnrs.org/reserves/box-springs-reserve.html)
     boxsprings = Location((-117.303321, ), (33.98472, ), 'Box Springs')
     boxsprings.get_clm_xy(domain_f05_g16)
+    # coordinates from http://atmos.seas.harvard.edu/lab/hf/hfsite.html
+    harvard = Location((-72.171478, ), (42.537755, ), 'Harvard Forest')
+    harvard.get_clm_xy(domain_f05_g16)
+    # coordinates from http://fluxnet.ornl.gov/site/1036
+    wlef = Location((-90.2723, ), (45.9459, ), 'WLEF')
+    wlef.get_clm_xy(domain_f05_g16)
     return (domain_f05_g16, santacruz, mclaughlin,
-            sierra_foothills, loma_ridge, sedgewick, boxsprings, ARM_SGP)
+            sierra_foothills, loma_ridge, sedgewick, boxsprings, ARM_SGP,
+            harvard, wlef)

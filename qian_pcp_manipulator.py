@@ -161,7 +161,7 @@ class QianMonthlyPCPData(object):
 
 def get_f05g16_pcp():
     pcp_ncfile = os.path.join(os.getenv('SCRATCH'),
-                              'qian_pcp_monthly_totals.nc')
+                              'qian_pcp_annual_totals.nc')
     qd = QianMonthlyPCPData(pcp_ncfile)
     qd.read_nc()
     d = CLM_Domain(fname=os.path.join('/', 'global',

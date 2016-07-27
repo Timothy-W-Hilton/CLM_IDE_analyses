@@ -109,6 +109,24 @@ class CLM_var(object):
         am = df.groupby(yr).aggregate(np.mean)
         return am
 
+    def annual_sum(self):
+        """return pandas dataframe containing the annual sum
+        """
+        if self.data.squeeze().ndim != 1:
+            raise ValueError(('currently can only calculate annual sum '
+                              'for a scalar time series.'))
+        df = pd.DataFrame({self.varname: self.data.squeeze()})
+        # I'm not using np.nanmean because I don't think CLM should
+        # produce any Nans, so I want it to throw an error if it
+        # encounters one
+        #
+        # extract a year, month, day from a numpy datetime64 by
+        #  (dt64.astype(object).year)
+        yr = [t.astype(object).year for t in self.time]
+        am = df.groupby(yr).aggregate(np.sum)
+        return am
+
+
     def monthly_mean(self):
         """return pandas dataframe containing the annual mean
         """
