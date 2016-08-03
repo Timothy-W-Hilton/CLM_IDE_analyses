@@ -148,12 +148,12 @@ if __name__ == "__main__":
     locations = (santacruz, mclaughlin,
                  sierra_foothills, loma_ridge, sedgewick,
                  boxsprings, ARM_SGP, harvard, wlef)
-    for tidx0 in (0, 40, 45):
-        for this_var in (wt, LE):
+    for this_var in (wt, LE):
+        ylim = get_range(locations, get_LE_ann_sum(this_var.data))
+        for tidx0 in (0, 40, 45):
             draw_pcp_scatter(qd, this_var, calmask, tidx0)
-            ylim = get_range(locations, get_LE_ann_sum(this_var.data))
-            print ylim
             for loc in locations:
                 draw_pcp_scatter_loc(qd, this_var, loc, tidx0, ylim=ylim)
-                draw_pcp_timeseries(qd, this_var, loc,
-                                    tidx0=0, tidx1=50, ylim=ylim)
+        for loc in locations:
+            draw_pcp_timeseries(qd, this_var, loc,
+                                tidx0=0, tidx1=50, ylim=ylim)
