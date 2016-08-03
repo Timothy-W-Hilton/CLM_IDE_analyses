@@ -43,6 +43,53 @@ def get_data():
         missing_value=qsoil.missing_value)
     return (qd, wt, le)
 
+def draw_pcp_scatter(pcp, var, mask, tidx0, tidx1=50,
+                     xlim=(-1000, 8000),
+                     ylim=(-500, 3000)):
+    """draw a scatter plot of precipitation vs. a water-driven land variable
+    """
+    pcparr = ma.masked_where(np.broadcast_to(mask, [tidx1-tidx0, 384, 576]),
+                             qd.pcp[tidx0:tidx1, ...])
+    varsum = get_LE_ann_sum(var)
+    arr = ma.masked_where(np.broadcast_to(mask, [tidx1-tidx0, 384, 576]),
+                            varsum[tidx0:tidx1, ...])
+    fig, ax = plt.subplots()
+    print "plotting"
+    ax.scatter(pcparr.flatten(), arr.flatten())
+    ax.set_title('California cells, spinup year {} - {}'.format(tidx0, tidx1))
+    ax.set_xlabel('annual pcp, mm')
+    ax.set_ylabel('annual total {} ({})'.format(var.varname, var.units))
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    print "saving"
+    fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'new_pcp',
+                             'pcp_{}_scatter_yr{}_{}.png'.format(var.varname,
+                                                                 tidx0, tidx1)))
+    print "done saving"
+    plt.close(fig)
+
+    #     # location-specific PCP--LE scatter
+    #     tidx1 = 50
+    #     for loc in (santacruz, mclaughlin,
+    #                 sierra_foothills, loma_ridge, sedgewick,
+    #                 boxsprings, ARM_SGP, harvard, wlef):
+    #         pcparr = qd.pcp[tidx0:tidx1, loc.clm_y, loc.clm_x]
+    #         LEarr =  LE_sum[tidx0:tidx1, loc.clm_y, loc.clm_x]
+    #         fig, ax = plt.subplots()
+    #         print "plotting"
+    #         ax.scatter(pcparr.flatten(), LEarr.flatten())
+    #         ax.set_title('{}, spinup year {} - {}'.format(loc.name, tidx0, tidx1))
+    #         ax.set_xlabel('annual pcp, mm')
+    #         ax.set_ylabel('annual LE (W m-2)')
+    #         ax.set_xlim(left=0, right=1600)
+    #         ax.set_ylim(bottom=100, top=850)
+    #         print "saving"
+    #         fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'new_pcp',
+    #                                  'pcp_LE_scatter_{}_yr{}_{}.pdf'.format(
+    #                                      loc.name.replace(' ', ''), tidx0, tidx1)))
+    #         print "done saving"
+    #         plt.close(fig)
+
 if __name__ == "__main__":
     (domain_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, sedgewick,
