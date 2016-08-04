@@ -131,8 +131,14 @@ def get_range(loclist, vals):
     """
     x = [loc.clm_x for loc in loclist]
     y = [loc.clm_y for loc in loclist]
-    loc_vals = vals[:, y, x]
+    loc_vals = ma.masked_greater(vals[:, y, x], 1e20)
     return (loc_vals.min(), loc_vals.max())
+
+
+def get_region_range(mask, vals):
+    x, y = np.where(np.logical_not(mask))
+    region_vals = ma.masked_greater(vals[:, x, y], 1e20)
+    return(region_vals.min(), region_vals.max())
 
 if __name__ == "__main__":
     (domain_f05_g16, santacruz, mclaughlin,
@@ -143,17 +149,19 @@ if __name__ == "__main__":
     lon = domain_f05_g16.lon
     lon[lon > 180] -= 360
     calmask_maker = qian_pcp_manipulator.CalMask(lon, domain_f05_g16.lat)
-    calmask = calmask_maker.mask()
+    calmask = np.logical_not(calmask_maker.mask())
 
     locations = (santacruz, mclaughlin,
                  sierra_foothills, loma_ridge, sedgewick,
                  boxsprings, ARM_SGP, harvard, wlef)
     for this_var in (wt, LE):
-        ylim = get_range(locations, get_LE_ann_sum(this_var.data))
+        this_sum = get_LE_ann_sum(this_var.data)
+        ylim = get_range(locations, this_sum)
+        ylim_cal = get_region_range(calmask, this_sum)
         for tidx0 in (0, 40, 45):
-            draw_pcp_scatter(qd, this_var, calmask, tidx0)
-            for loc in locations:
-                draw_pcp_scatter_loc(qd, this_var, loc, tidx0, ylim=ylim)
-        for loc in locations:
-            draw_pcp_timeseries(qd, this_var, loc,
-                                tidx0=0, tidx1=50, ylim=ylim)
+            draw_pcp_scatter(qd, this_var, calmask, tidx0, ylim=ylim_cal)
+        #     for loc in locations:
+        #         draw_pcp_scatter_loc(qd, this_var, loc, tidx0, ylim=ylim)
+        # for loc in locations:
+        #     draw_pcp_timeseries(qd, this_var, loc,
+        #                         tidx0=0, tidx1=50, ylim=ylim)
