@@ -7,7 +7,6 @@ PCP: precipitation
 """
 import matplotlib
 matplotlib.use('AGG')
-
 import os
 import netCDF4
 import numpy as np
@@ -16,10 +15,12 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 from datetime import datetime
 from mpl_toolkits.basemap import Basemap
+import warnings
 from timutils import colormap_nlevs
 from RegionTester.region_tester import InUSState
 from clm_domain import CLM_Domain
 from IDE_locations import CLMf05g16_get_spatial_info
+
 
 class CalMask(object):
     """mask to determine if a lat/lon points are within California
@@ -42,8 +43,9 @@ class CalMask(object):
         iscal = np.empty(self.lon.shape, dtype=bool)
         iscal[...] = False
         for (x, y), this_lon in np.ndenumerate(self.lon):
-            iscal[x, y] = California.point_inside(self.lon[x, y], self.lat[x, y])
-        return iscal
+            iscal[x, y] = California.point_inside(self.lon[x, y],
+                                                  self.lat[x, y])
+        return np.logical_not(iscal)
 
 
 class USAMask(object):
@@ -119,7 +121,6 @@ class QianMonthlyPCPData(object):
             self.pcp[t, ...] = finterp.ev(dlon, dlat)
             self.pcp[self.pcp < 0] = 0.0
 
-
     def show_reduction_pct(self, d, locations=None):
         """d: CLM_domain object
         locations: list of Location objects
@@ -136,7 +137,9 @@ class QianMonthlyPCPData(object):
                                                    extend='neither')
         mworld = setup_worldmap(ax1)
         mcal = setup_calmap(ax2)
-        cm = mworld.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(pct),
+        cm = mworld.pcolormesh(d.get_lon(),
+                               d.get_lat(),
+                               ma.masked_invalid(pct),
                                cmap=cmap,
                                norm=norm,
                                latlon=True)
@@ -159,6 +162,7 @@ class QianMonthlyPCPData(object):
                                  'IDE_pct_map.png'))
         plt.close(fig)
 
+
 def get_f05g16_pcp():
     pcp_ncfile = os.path.join(os.getenv('SCRATCH'),
                               'qian_pcp_annual_totals.nc')
@@ -175,6 +179,7 @@ def get_f05g16_pcp():
     qd.interpolate(d.get_lon(), d.get_lat())
     return qd
 
+
 def setup_calmap(ax):
     """basic map of world with parallels, meridians, coastlines
     """
@@ -185,11 +190,12 @@ def setup_calmap(ax):
                 ax=ax)
     m.drawcoastlines(linewidth=1.25)
     m.fillcontinents(color='0.8', zorder=0)
-    m.drawparallels(np.arange(30, 44, 4), labels=[1,0,0,0])
-    m.drawmeridians(np.arange(-125, -110, 5), labels=[0,0,0,1])
+    m.drawparallels(np.arange(30, 44, 4), labels=[1, 0, 0, 0])
+    m.drawmeridians(np.arange(-125, -110, 5), labels=[0, 0, 0, 1])
     m.drawstates()
     m.drawcountries()
     return m
+
 
 def setup_worldmap(ax):
     """basic map of world with parallels, meridians, coastlines
@@ -200,13 +206,14 @@ def setup_worldmap(ax):
                 ax=ax)
     m.drawcoastlines(linewidth=1.25)
     m.fillcontinents(color='0.8', zorder=0)
-    m.drawparallels(np.arange(-80,81,20),labels=[0,1,0,0])
-    m.drawmeridians(np.arange(0,360,60),labels=[0,0,0,1])
+    m.drawparallels(np.arange(-80, 81, 20), labels=[0, 1, 0, 0])
+    m.drawmeridians(np.arange(0, 360, 60), labels=[0, 0, 0, 1])
     return m
+
 
 def check_results(qd, dlon, dlat):
     fig, ax = plt.subplots(2, 1, figsize=(8.5, 11))
-    cmap=plt.get_cmap('Blues')
+    cmap = plt.get_cmap('Blues')
     cm = ax[0].pcolormesh(qd.lon, qd.lat, qd.pcp_all[0, ...],
                           cmap=cmap)
     for this_ax in ax:
@@ -222,8 +229,6 @@ def check_results(qd, dlon, dlat):
 
     print "T62 min, max: ", qd.pcp_all[0, ...].min(), qd.pcp_all[0, ...].max()
     print "0.5 deg min, max: ", qd.pcp[0, ...].min(), qd.pcp[0, ...].max()
-
-
 
 
 def site_summary(qd, site):
@@ -253,13 +258,13 @@ if __name__ == "__main__":
      sierra_foothills, loma_ridge, sedgewick,
      boxsprings, ARM_SGP) = CLMf05g16_get_spatial_info()
     qd.show_reduction_pct(domain_f05_g16,
-                           (santacruz, mclaughlin,
-                            sierra_foothills, loma_ridge,
-                            sedgewick, boxsprings))
+                          (santacruz, mclaughlin,
+                           sierra_foothills, loma_ridge,
+                           sedgewick, boxsprings))
     for this_site in (santacruz, mclaughlin, sierra_foothills,
                       loma_ridge, sedgewick, boxsprings, ARM_SGP):
         print "plotting summary: {}".format(this_site.name)
         site_summary(qd, this_site)
-    #how to index:
+    # how to index:
     # qd.pcp[:, santacruz.clm_y, santacruz.clm_x]
     # qd.pcp[:, ARM_SGP.clm_y, ARM_SGP.clm_x]
