@@ -126,7 +126,6 @@ class CLM_var(object):
         am = df.groupby(yr).aggregate(np.sum)
         return am
 
-
     def monthly_mean(self):
         """return pandas dataframe containing the annual mean
         """
