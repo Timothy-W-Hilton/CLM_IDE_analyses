@@ -1,4 +1,4 @@
-"""module aggretates 6-hourly Qian et al (2006) precip data to monthly total pcp
+"""module aggregates 6-hourly Qian et al (2006) pcp data to monthly total pcp
 
 The module provides class QianTotaller to do the heavy lifting.
 
@@ -11,11 +11,11 @@ Data and Evaluations, Journal of Hydrometeorology, 7(5), 953
 
 import os
 import sys
-import netCDF4
 import tempfile
 import subprocess
 from shutil import rmtree
 from glob import glob
+
 
 class QianTotaller(object):
     """class aggretates 6-hourly Qian precip data to monthly total pcp
@@ -101,14 +101,14 @@ class QianTotaller(object):
                     raise
             # append monthly total to one netcdf file
             cmd_concat = (['ncecat', '-c', '-O', '--rcd_nm', 'time',
-                    '-v', 'time,PRECTmms'] +
-                   fnames_mon_totals)
+                           '-v', 'time,PRECTmms'] +
+                          fnames_mon_totals)
             cmd_concat.append(os.path.join(self.output_dir, self.output_fname))
             subp_wrapper(cmd_concat)
             # put lat, lon into the concatenated variable
             cmd_latlon = ['ncks', '-A', '-v', 'LATIXY,LONGXY',
-                   fnames_mon_totals[0],
-                   os.path.join(self.output_dir, self.output_fname)]
+                          fnames_mon_totals[0],
+                          os.path.join(self.output_dir, self.output_fname)]
             subp_wrapper(cmd_latlon)
             # produce annual total from the monthly totals
             fname_annual = os.path.join(self.output_dir,
