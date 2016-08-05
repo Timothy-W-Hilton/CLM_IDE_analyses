@@ -1,6 +1,7 @@
 import matplotlib
 matplotlib.use('AGG')
 import matplotlib.pyplot as plt
+from scipy import stats
 import os
 import numpy as np
 import numpy.ma as ma
@@ -55,14 +56,24 @@ def draw_pcp_scatter(pcp, var, mask, tidx0, tidx1=50,
     varsum = get_LE_ann_sum(var)
     arr = ma.masked_where(np.broadcast_to(mask, [tidx1-tidx0, 384, 576]),
                           varsum[tidx0:tidx1, ...])
+
+    print "doing linear fit"
+    slope, intercept, r_value, p_value, std_err = stats.linregress(
+        pcparr.compressed(), arr.compressed())
+    x_linear = np.linspace(xlim[0], xlim[1], num = 4)
+    y_linear = (x_linear * slope) + intercept
+
     fig, ax = plt.subplots()
     print "plotting"
     ax.scatter(pcparr.flatten(), arr.flatten())
+    ax.plot(x_linear, y_linear, 'r-')
     ax.set_title('California cells, spinup year {} - {}'.format(tidx0, tidx1))
     ax.set_xlabel('annual pcp, mm')
     ax.set_ylabel('annual total {} ({})'.format(var.varname, var.units))
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
+    ax.text(0.7, 0.1, 'r$^2$ = {:0.3g}'.format(r_value ** 2),
+            transform=ax.transAxes)
     print "saving"
     fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'new_pcp',
                              'pcp_{}_scatter_yr{}_{}.png'.format(var.varname,
@@ -160,8 +171,8 @@ if __name__ == "__main__":
         ylim_cal = get_region_range(calmask, this_sum)
         for tidx0 in (0, 40, 45):
             draw_pcp_scatter(qd, this_var, calmask, tidx0, ylim=ylim_cal)
-            for loc in locations:
-                draw_pcp_scatter_loc(qd, this_var, loc, tidx0, ylim=ylim)
-        for loc in locations:
-            draw_pcp_timeseries(qd, this_var, loc,
-                                tidx0=0, tidx1=50, ylim=ylim)
+        #     for loc in locations:
+        #         draw_pcp_scatter_loc(qd, this_var, loc, tidx0, ylim=ylim)
+        # for loc in locations:
+        #     draw_pcp_timeseries(qd, this_var, loc,
+        #                         tidx0=0, tidx1=50, ylim=ylim)
