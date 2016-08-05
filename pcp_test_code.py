@@ -60,18 +60,21 @@ def draw_pcp_scatter(pcp, var, mask, tidx0, tidx1=50,
     print "doing linear fit"
     slope, intercept, r_value, p_value, std_err = stats.linregress(
         pcparr.compressed(), arr.compressed())
-    x_linear = np.linspace(xlim[0], xlim[1], num = 4)
+    x_linear = np.linspace(xlim[0], xlim[1], num=4)
     y_linear = (x_linear * slope) + intercept
 
     fig, ax = plt.subplots()
     print "plotting"
     ax.scatter(pcparr.flatten(), arr.flatten())
     ax.plot(x_linear, y_linear, 'r-')
+    fit_proxy = matplotlib.lines.Line2D([], [], color='red',
+                                        label='r$^2$ = {:0.3g}'.format(r_value ** 2))
     ax.set_title('California cells, spinup year {} - {}'.format(tidx0, tidx1))
     ax.set_xlabel('annual pcp, mm')
     ax.set_ylabel('annual total {} ({})'.format(var.varname, var.units))
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
+    ax.legend((fit_proxy, ), loc='best')
     ax.text(0.7, 0.1, 'r$^2$ = {:0.3g}'.format(r_value ** 2),
             transform=ax.transAxes)
     print "saving"
