@@ -46,7 +46,7 @@ def get_data():
 
 
 def draw_pcp_scatter(pcp, var, mask, tidx0, tidx1=50,
-                     xlim=(-1000, 8000),
+                     xlim=(-100, 2000),
                      ylim=(-500, 3000)):
     """draw a scatter plot of precipitation vs. a water-driven land variable
     """
@@ -73,7 +73,7 @@ def draw_pcp_scatter(pcp, var, mask, tidx0, tidx1=50,
 
 
 def draw_pcp_scatter_loc(pcp, var, loc, tidx0, tidx1=50,
-                         xlim=(-1000, 8000),
+                         xlim=(-100, 2000),
                          ylim=(-500, 3000)):
     """location-specific PCP--LE scatter
     """
@@ -138,7 +138,7 @@ def get_range(loclist, vals):
 def get_region_range(mask, vals):
     x, y = np.where(np.logical_not(mask))
     region_vals = ma.masked_greater(vals[:, x, y], 1e20)
-    return(region_vals.min(), region_vals.max())
+    return(region_vals.min() * 0.95, region_vals.max() * 1.05)
 
 if __name__ == "__main__":
     (domain_f05_g16, santacruz, mclaughlin,
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     lon = domain_f05_g16.lon
     lon[lon > 180] -= 360
     calmask_maker = qian_pcp_manipulator.CalMask(lon, domain_f05_g16.lat)
-    calmask = np.logical_not(calmask_maker.mask())
+    calmask = calmask_maker.mask()
 
     locations = (santacruz, mclaughlin,
                  sierra_foothills, loma_ridge, sedgewick,
@@ -160,8 +160,8 @@ if __name__ == "__main__":
         ylim_cal = get_region_range(calmask, this_sum)
         for tidx0 in (0, 40, 45):
             draw_pcp_scatter(qd, this_var, calmask, tidx0, ylim=ylim_cal)
-        #     for loc in locations:
-        #         draw_pcp_scatter_loc(qd, this_var, loc, tidx0, ylim=ylim)
-        # for loc in locations:
-        #     draw_pcp_timeseries(qd, this_var, loc,
-        #                         tidx0=0, tidx1=50, ylim=ylim)
+            for loc in locations:
+                draw_pcp_scatter_loc(qd, this_var, loc, tidx0, ylim=ylim)
+        for loc in locations:
+            draw_pcp_timeseries(qd, this_var, loc,
+                                tidx0=0, tidx1=50, ylim=ylim)
