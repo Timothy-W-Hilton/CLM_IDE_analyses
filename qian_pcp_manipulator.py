@@ -17,6 +17,7 @@ from datetime import datetime
 from mpl_toolkits.basemap import Basemap
 import warnings
 from timutils import colormap_nlevs
+from timutils.io import delete_if_exists
 from RegionTester.region_tester import InUSState
 from clm_domain import CLM_Domain
 from IDE_locations import CLMf05g16_get_spatial_info
@@ -71,6 +72,10 @@ class QianMonthlyPCPData(object):
             fname (string): full path to file containing monthly PCP
                 from QianTotaller """
         self.fname = fname
+        self.lon = None
+        self.lat = None
+        self.pcp_all = None
+        self.pcp = None
 
     def read_nc(self):
         """read pcp data from netcdf file
@@ -120,6 +125,8 @@ class QianMonthlyPCPData(object):
         if lat_not_regular or lon_not_regular:
             raise ValueError('latitude and longitude must be a regular grid')
 
+        self.dlon = dlon
+        self.dlat = dlat
         ntime = self.pcp_all.shape[0]
         nlon = dlon.shape[0]
         nlat = dlat.shape[1]
@@ -154,6 +161,45 @@ class QianMonthlyPCPData(object):
         pctl = ma.masked_invalid(np.percentile(a=self.pcp, q=(1, 50), axis=0))
         frac = pctl[0, ...] / pctl[1, ...]
         return frac
+
+    def pcp_reduction_to_netcdf(self, outfile):
+        """write pcp reduction fractions to netcdf file
+
+        the netcdf file has three variables: lat, lon, frac
+
+        PARAMETERS:
+        outfile: string
+           full path to the netcdf file to be written.  The file is
+           overwritten if it already exists
+
+        Returns
+        bool
+            True if successful, False otherwise
+        """
+        if self.pcp is None:
+            raise ValueError('pcp not yet parsed')
+
+        frac = self.get_IDE_reduction()
+
+        delete_if_exists(outfile)
+        nc = netCDF4.Dataset(outfile, mode='w', format="NETCDF3_CLASSIC")
+        nc.createDimension("lat", self.dlat.shape[1])
+        nc.createDimension("lon", self.dlon.shape[0])
+        latvar = nc.createVariable("lat", "f8", ("lat", "lon"))
+        lonvar = nc.createVariable("lon", "f8", ("lat", "lon"))
+        fracvar = nc.createVariable("frac", "f8", ("lat", "lon"))
+        latvar[:] = self.dlat[...]
+        latvar.units = 'deg N'
+        lonvar[:] = self.dlon[...]
+        lonvar.units = 'deg E'
+        fracvar[:] = frac[...]
+        fracvar.units = 'fraction'
+        fracvar.description = (
+            'fractional precipitation'
+            'reduction for the International Drought Experiment (IDE).'
+            'Calculated as ((1st percentile / 50th percentile)) of Qian et'
+            'al (2006) 1948-2004 precipitation')
+        nc.close()
 
     def show_reduction_pct(self, d, locations=None):
         """d: CLM_domain object
@@ -287,17 +333,18 @@ def site_summary(qd, site):
 if __name__ == "__main__":
 
     qd = get_f05g16_pcp()
-    (domain_f05_g16, santacruz, mclaughlin,
-     sierra_foothills, loma_ridge, sedgewick,
-     boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
-    qd.show_reduction_pct(domain_f05_g16,
-                          (santacruz, mclaughlin,
-                           sierra_foothills, loma_ridge,
-                           sedgewick, boxsprings))
-    for this_site in (santacruz, mclaughlin, sierra_foothills,
-                      loma_ridge, sedgewick, boxsprings, ARM_SGP):
-        print "plotting summary: {}".format(this_site.name)
-        site_summary(qd, this_site)
+    qd.pcp_reduction_to_netcdf('./pcp_reduction_frac.nc')
+    # (domain_f05_g16, santacruz, mclaughlin,
+    #  sierra_foothills, loma_ridge, sedgewick,
+    #  boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
+    # qd.show_reduction_pct(domain_f05_g16,
+    #                       (santacruz, mclaughlin,
+    #                        sierra_foothills, loma_ridge,
+    #                        sedgewick, boxsprings))
+    # for this_site in (santacruz, mclaughlin, sierra_foothills,
+    #                   loma_ridge, sedgewick, boxsprings, ARM_SGP):
+    #     print "plotting summary: {}".format(this_site.name)
+    #     site_summary(qd, this_site)
     # how to index:
     # qd.pcp[:, santacruz.clm_y, santacruz.clm_x]
     # qd.pcp[:, ARM_SGP.clm_y, ARM_SGP.clm_x]
