@@ -97,6 +97,20 @@ class QianMonthlyPCPData(object):
             x, y = np.where(mask)
 
     def interpolate(self, dlon, dlat):
+        """regrid Qian data
+
+        The `Qian et al. (2006) <http://dx.doi.org/10.1175/JHM540.1>`_
+        atmospheric data are on a 1 x 2 degree grid.  Use bivariate
+        spline approximation over a rectangular mesh to regrid the
+        data to a specified lon, lat grid.
+
+        The regridded values are placed in self.pcp.
+
+        PARAMETERS:
+        lon, lat: ndarray; of arbitrary longitudes and latitudes.  Must
+           contain the same number of elements.
+
+        """
         # verify that lon does not change with latitude, and lat does
         # not change with longitue
         lon_not_regular = any([np.diff(self.lon[:, i]).any()
@@ -121,12 +135,31 @@ class QianMonthlyPCPData(object):
             self.pcp[t, ...] = finterp.ev(dlon, dlat)
             self.pcp[self.pcp < 0] = 0.0
 
+    def get_IDE_reduction(self):
+        """calculate IDE precipitation reduction
+
+        `International Drought Experiment
+        (IDE) <https://wp.natsci.colostate.edu/droughtnet/activities/international-drought-experiment/>`_
+        protocol is to reduce the precipitation at each site to 1% of
+        the long-term average annual precipitation.
+        get_IDE_reduction_pct() calculates that redution for each Qian
+        pcp data pixel as ((1st percentile) / (50th percentile)), with
+        the percentiles calculated from the compete time series of
+        annual total pcp for each grid cell.
+
+        RETURNS:
+        an NxM numpy array of values in the range [0.0, 1.0].  NxM are
+           the number of rows and columns, respectively, in the pcp data.
+        """
+        pctl = ma.masked_invalid(np.percentile(a=self.pcp, q=(1, 50), axis=0))
+        frac = pctl[0, ...] / pctl[1, ...]
+        return frac
+
     def show_reduction_pct(self, d, locations=None):
         """d: CLM_domain object
         locations: list of Location objects
         """
-        pctl = ma.masked_invalid(np.percentile(a=self.pcp, q=(1, 50), axis=0))
-        pct = pctl[0, ...] / pctl[1, ...]
+        frac = self.get_IDE_reduction()
         fig = plt.figure(figsize=(12, 6))
         ax1 = plt.subplot2grid((60, 11), (0, 0), colspan=5, rowspan=50)
         ax2 = plt.subplot2grid((60, 11), (0, 6), colspan=5, rowspan=50)
@@ -139,11 +172,11 @@ class QianMonthlyPCPData(object):
         mcal = setup_calmap(ax2)
         cm = mworld.pcolormesh(d.get_lon(),
                                d.get_lat(),
-                               ma.masked_invalid(pct),
+                               ma.masked_invalid(frac),
                                cmap=cmap,
                                norm=norm,
                                latlon=True)
-        cm = mcal.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(pct),
+        cm = mcal.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(frac),
                              cmap=cmap,
                              norm=norm,
                              latlon=True)
@@ -151,7 +184,7 @@ class QianMonthlyPCPData(object):
             for here in locations:
                 pt = mcal.scatter(here.lon[0], here.lat[0], latlon=True,
                                   marker='*', s=100, c='r')
-                ax2.annotate(s="{:0.2f}".format(pct[here.clm_y, here.clm_x]),
+                ax2.annotate(s="{:0.2f}".format(frac[here.clm_y, here.clm_x]),
                              xy=mcal(here.lon[0], here.lat[0]))
 
         cb = plt.colorbar(cm, cax=ax3,
@@ -181,7 +214,7 @@ def get_f05g16_pcp():
 
 
 def setup_calmap(ax):
-    """basic map of world with parallels, meridians, coastlines
+    """basic map of California with parallels, meridians, coastlines
     """
     m = Basemap(llcrnrlon=-125, llcrnrlat=30,
                 urcrnrlon=-112, urcrnrlat=43,
@@ -246,7 +279,7 @@ def site_summary(qd, site):
                 label='50th pctl')
     ax.set_title(site.name)
     ax.legend(loc='best')
-    fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'pcp_summaries',
+    fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                              "{}_pcp.pdf".format(site.name.replace(' ', ''))))
     plt.close(fig)
 
@@ -256,7 +289,7 @@ if __name__ == "__main__":
     qd = get_f05g16_pcp()
     (domain_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, sedgewick,
-     boxsprings, ARM_SGP) = CLMf05g16_get_spatial_info()
+     boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
     qd.show_reduction_pct(domain_f05_g16,
                           (santacruz, mclaughlin,
                            sierra_foothills, loma_ridge,
