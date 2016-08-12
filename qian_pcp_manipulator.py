@@ -82,7 +82,8 @@ class QianMonthlyPCPData(object):
         """read pcp data from netcdf file
         """
         nc = netCDF4.Dataset(self.fname, 'r')
-        self.pcp_all = nc.variables['PRECTmms'][:] * 21600
+        s_per_6hrs = 6.0 * 60.0 * 60.0  # seconds in 6 hours
+        self.pcp_all = nc.variables['PRECTmms'][:] * s_per_6hrs
         self.lon = nc.variables['LONGXY'][...]
         self.lat = nc.variables['LATIXY'][...]
         nc.close()
