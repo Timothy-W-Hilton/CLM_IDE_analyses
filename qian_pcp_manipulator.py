@@ -8,6 +8,7 @@ PCP: precipitation
 import matplotlib
 matplotlib.use('AGG')
 import os
+import sys
 import netCDF4
 import numpy as np
 from numpy import ma
@@ -195,15 +196,14 @@ class QianMonthlyPCPData(object):
         fracvar[:] = frac[...]
         fracvar.units = 'fraction'
         fracvar.description = (
-            'fractional precipitation'
-            'reduction for the International Drought Experiment (IDE).'
-            'Calculated as ((1st percentile / 50th percentile)) of Qian et'
+            'fractional precipitation '
+            'reduction for the International Drought Experiment (IDE). '
+            'Calculated as ((1st percentile / 50th percentile)) of Qian et '
             'al (2006) 1948-2004 precipitation')
         nc.close()
 
-    def show_reduction_pct(self, d, locations=None):
-        """d: CLM_domain object
-        locations: list of Location objects
+    def show_reduction_pct(self, locations=None):
+        """ locations: list of Location objects
         """
         frac = self.get_IDE_reduction()
         fig = plt.figure(figsize=(12, 6))
@@ -216,33 +216,44 @@ class QianMonthlyPCPData(object):
                                                    extend='neither')
         mworld = setup_worldmap(ax1)
         mcal = setup_calmap(ax2)
-        cm = mworld.pcolormesh(d.get_lon(),
-                               d.get_lat(),
+        cm = mworld.pcolormesh(self.dlon,
+                               self.dlat,
                                ma.masked_invalid(frac),
                                cmap=cmap,
                                norm=norm,
                                latlon=True)
-        cm = mcal.pcolormesh(d.get_lon(), d.get_lat(), ma.masked_invalid(frac),
+        cm = mcal.pcolormesh(self.dlon,
+                             self.dlat,
+                             ma.masked_invalid(frac),
                              cmap=cmap,
                              norm=norm,
                              latlon=True)
         if locations is not None:
-            for here in locations:
-                pt = mcal.scatter(here.lon[0], here.lat[0], latlon=True,
-                                  marker='*', s=100, c='r')
-                ax2.annotate(s="{:0.2f}".format(frac[here.clm_y, here.clm_x]),
-                             xy=mcal(here.lon[0], here.lat[0]))
-
-        cb = plt.colorbar(cm, cax=ax3,
-                          orientation='horizontal')
+            try:
+                for here in locations:
+                    pt = mcal.scatter(here.lon[0], here.lat[0], latlon=True,
+                                      marker='*', s=100, c='r')
+                    ax2.annotate(s="{:0.2f}".format(frac[here.clm_y,
+                                                         here.clm_x]),
+                                 xy=mcal(here.lon[0], here.lat[0]))
+            except IndexError:
+                print('{sitename}: clm_x or clm_y'
+                      ' exceeds domain bounds'.format(
+                          sitename=here.name))
+            except:
+                print("Unexpected error:", sys.exc_info()[0])
+                raise
+        cb = plt.colorbar(cm, cax=ax3, orientation='horizontal')
         cb.ax.set_xlabel('1948 - 2005 pcp: (1st percentile / 50th percentile)')
         fig.tight_layout()
-        fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
-                                 'IDE_pct_map.png'))
+        fig.savefig(
+            os.path.join(os.getenv('HOME'), 'plots', 'maptest',
+                         'IDE_pct_map_interp{}.png'.format(
+                             self.lat.size != self.dlat.size)))
         plt.close(fig)
 
 
-def get_f05g16_pcp():
+def get_f05g16_pcp(interp_flag=False):
     pcp_ncfile = os.path.join(os.getenv('SCRATCH'),
                               'qian_pcp_annual_totals.nc')
     qd = QianMonthlyPCPData(pcp_ncfile)
@@ -255,7 +266,13 @@ def get_f05g16_pcp():
                                       'lnd',
                                       'hist',
                                       'CLM_f05_g16.clm2.h0.0050-01.nc'))
-    qd.interpolate(d.get_lon(), d.get_lat())
+    if interp_flag:
+        qd.interpolate(d.get_lon(), d.get_lat())
+    else:
+        qd.dlat = qd.lat
+        qd.dlon = qd.lon
+        qd.pcp = qd.pcp_all
+    qd.pcp_reduction_to_netcdf('./pcp_reduction_frac.nc')
     return qd
 
 
@@ -332,15 +349,14 @@ def site_summary(qd, site):
 
 if __name__ == "__main__":
 
-    qd = get_f05g16_pcp()
-    qd.pcp_reduction_to_netcdf('./pcp_reduction_frac.nc')
-    # (domain_f05_g16, santacruz, mclaughlin,
-    #  sierra_foothills, loma_ridge, sedgewick,
-    #  boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
-    # qd.show_reduction_pct(domain_f05_g16,
-    #                       (santacruz, mclaughlin,
-    #                        sierra_foothills, loma_ridge,
-    #                        sedgewick, boxsprings))
+    qd = get_f05g16_pcp(interp_flag=False)
+
+    (domain_f05_g16, santacruz, mclaughlin,
+     sierra_foothills, loma_ridge, sedgewick,
+     boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
+    qd.show_reduction_pct((santacruz, mclaughlin,
+                           sierra_foothills, loma_ridge,
+                           sedgewick, boxsprings))
     # for this_site in (santacruz, mclaughlin, sierra_foothills,
     #                   loma_ridge, sedgewick, boxsprings, ARM_SGP):
     #     print "plotting summary: {}".format(this_site.name)
