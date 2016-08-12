@@ -4,6 +4,16 @@ LE: latent heat flux
 ZWT: total water table depth
 TWS: total water storage
 PCP: precipitation
+
+REFERENCES
+
+`International Drought Experiment (IDE)
+<https://wp.natsci.colostate.edu/droughtnet/activities/international-drought-experiment/>`_
+
+Qian, T., A. Dai, K. E. Trenberth, and K. W. Oleson (2006), Simulation
+of Global Land Surface Conditions from 1948 to 2004. Part I: Forcing
+Data and Evaluations, Journal of Hydrometeorology, 7(5), 953
+
 """
 import matplotlib
 matplotlib.use('AGG')
@@ -11,14 +21,17 @@ import os
 import sys
 import netCDF4
 import numpy as np
+import shutil
 from numpy import ma
 import matplotlib.pyplot as plt
 from scipy import interpolate
 from datetime import datetime
 from mpl_toolkits.basemap import Basemap
 import warnings
+import tempfile
 from timutils import colormap_nlevs
 from timutils.io import delete_if_exists
+from qian_totaller import QianTotaller
 from RegionTester.region_tester import InUSState
 from clm_domain import CLM_Domain
 from IDE_locations import CLMf05g16_get_spatial_info
@@ -346,6 +359,36 @@ def site_summary(qd, site):
     fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                              "{}_pcp.pdf".format(site.name.replace(' ', ''))))
     plt.close(fig)
+
+
+def create_reduced_pcp():
+    """reduce Qian et al (2006) precip for IDE
+
+    copy Qian et al (2006) preciptiation files to a temporary
+    directory and reduce each grid cell's precipitation according to
+    the International Drought Experiment (IDE) protocol
+    """
+    qd = get_f05g16_pcp(interp_flag=False)
+    frac = qd.get_IDE_reduction()
+    qt = QianTotaller(
+        data_dir=os.path.join('/', 'project', 'projectdirs',
+                              'ccsm1', 'inputdata', 'atm', 'datm7',
+                              'atm_forcing.datm7.Qian.T62.c080727',
+                              'Precip6Hrly'),
+        output_dir=None, output_fname=None)
+    qt.get_filenames()
+    tmpdir = tempfile.mkdtemp(dir=os.path.join(os.getenv('SCRATCH'),
+                                               'Qian_pcp_reduced'))
+    print "writing to {}".format(tmpdir)
+    for this_file in qt.filenames:
+        new_name = os.path.join(tmpdir, os.path.basename(this_file)).replace(
+            'Prec.', 'Prec.IDEreduction.')
+        shutil.copyfile(this_file, new_name)
+        nc = netCDF4.Dataset(new_name, mode='a')
+        pcp_var = nc.variables['PRECTmms']
+        pcp_var[:] = pcp_var[:] * frac[np.newaxis, ...]
+        nc.close()
+        print "wrote {}".format(new_name)
 
 
 if __name__ == "__main__":

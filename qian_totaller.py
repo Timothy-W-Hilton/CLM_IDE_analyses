@@ -1,4 +1,4 @@
-"""module aggregates 6-hourly Qian et al (2006) pcp data to monthly total pcp
+"""aggregate 6-hourly Qian et al (2006) pcp to monthly and annual totals
 
 The module provides class QianTotaller to do the heavy lifting.
 
