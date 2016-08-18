@@ -390,6 +390,13 @@ def create_reduced_pcp():
         nc.close()
         print "wrote {}".format(new_name)
 
+def get_reduced_pcp_annual_totals():
+    qt_red = QianTotaller(data_dir=os.path.join(os.getenv('SCRATCH'),
+                                                'Qian_pcp_reduced'),
+                          output_dir=os.getenv('SCRATCH'),
+                          output_fname='reduced_pcp_total_TEST.nc')
+    qt_red.get_filenames()
+    qt_red.totaller()
 
 if __name__ == "__main__":
 
@@ -401,8 +408,11 @@ if __name__ == "__main__":
     qd.show_reduction_pct((santacruz, mclaughlin,
                            sierra_foothills, loma_ridge,
                            sedgewick, boxsprings))
+    get_reduced_pcp_annual_totals()  # needs interp_flat=False
+
     # for this_site in (santacruz, mclaughlin, sierra_foothills,
     #                   loma_ridge, sedgewick, boxsprings, ARM_SGP):
+    #     # needs interp_flag=True
     #     print "plotting summary: {}".format(this_site.name)
     #     site_summary(qd, this_site)
     # how to index:
