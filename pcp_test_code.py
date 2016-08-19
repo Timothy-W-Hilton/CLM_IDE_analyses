@@ -18,7 +18,7 @@ def get_LE_ann_sum(LE):
 
 def get_data():
 
-    qd = qian_pcp_manipulator.get_f05g16_pcp()
+    qd = qian_pcp_manipulator.get_f05g16_pcp(interp_flag=True)
 
     CLM_f05_g16 = spinup_diagnostics.CLM_spinup_analyzer(
         os.path.join('/', 'global',
