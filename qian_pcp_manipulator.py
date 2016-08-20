@@ -266,6 +266,20 @@ class QianMonthlyPCPData(object):
                              self.lat.size != self.dlat.size)))
         plt.close(fig)
 
+    def recycle_pcp(self, yearstart, yearend):
+        """CLM spinup run used 1972-2004 Qian data, recycled to the length of
+        the spinup (51 years).  Here, take the 1948...2004 Qian data
+        and recycle it to 1972...2004,1972...198?
+        """
+        nyrs_raw = self.pcp.shape[0]
+        nyrs_recycled = yearend - yearstart + 1
+        yrs_raw = np.arange(1948, 1948 + nyrs_raw + 5)[0:nyrs_raw]
+        idx_yearstart = np.nonzero(yrs_raw == yearstart)[0][0]
+        nreps = np.int(np.ceil(np.float(nyrs_raw) / np.float(nyrs_recycled)))
+        pcp_recycled = np.tile(self.pcp[idx_yearstart:-1, ...], (nreps, 1, 1))
+        pcp_recycled = pcp_recycled[1:(nyrs_raw + 1), ...]
+        self.pcp = pcp_recycled
+
 
 def get_f05g16_pcp(interp_flag=False):
     pcp_ncfile = os.path.join(os.getenv('SCRATCH'),

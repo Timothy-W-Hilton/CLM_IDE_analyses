@@ -49,6 +49,7 @@ def get_data():
 def draw_pcp_scatter(pcp, var, mask, tidx0, tidx1=50,
                      xlim=(-100, 2000),
                      ylim=(-500, 3000)):
+
     """draw a scatter plot of precipitation vs. a water-driven land variable
     """
     pcparr = ma.masked_where(np.broadcast_to(mask, [tidx1-tidx0, 384, 576]),
@@ -167,6 +168,8 @@ if __name__ == "__main__":
      sierra_foothills, loma_ridge, sedgewick,
      boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
     qd, wt, LE = get_data()
+    qd.recycle_pcp(1972, 2004)
+
     LE_sum = get_LE_ann_sum(LE)
     lon = domain_f05_g16.lon
     lon[lon > 180] -= 360
