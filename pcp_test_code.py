@@ -57,6 +57,9 @@ def draw_pcp_scatter(pcp, var, mask, tidx0, tidx1=50,
     varsum = get_LE_ann_sum(var)
     arr = ma.masked_where(np.broadcast_to(mask, [tidx1-tidx0, 384, 576]),
                           varsum[tidx0:tidx1, ...])
+    # average across entire domain
+    pcparr = pcparr.sum(axis=(1, 2)) / pcparr[0, ...].compressed().size
+    arr = arr.sum(axis=(1, 2)) / arr[0, ...].compressed().size
 
     slope, intercept, r_value, p_value, std_err = stats.linregress(
         pcparr.compressed(), arr.compressed())
