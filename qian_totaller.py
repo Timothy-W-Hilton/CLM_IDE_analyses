@@ -35,19 +35,21 @@ class QianTotaller(object):
     1 Jan 1948) in variable time.
     """
 
-    def __init__(self, data_dir, output_dir, output_fname):
+    def __init__(self, varname, data_dir, output_dir, output_fname):
         """populate fields data_dir, output_dir, output_fname, filenames
 
         Populates field filenames with a list containing all netCDF
         files (*.nc) in output_dir.
 
         ARGS:
+            varname (string): name of the netcdf variable to be totaled
             data_dir (string): full path to the directory containing
                 Qian pcp data
             output_dir (string): full path to the directory to contain
                 the output file (must already exist).
             output_fname (string): name for the output file
         """
+        self.varname = varname
         self.data_dir = data_dir
         self.output_dir = output_dir
         self.output_fname = output_fname
@@ -82,7 +84,7 @@ class QianTotaller(object):
                     this_file_with_recdim.replace('.nc', '_tot.nc'))
                 cmd_get_tot = ["ncwa", "-h", "-O", "-y", "ttl",
                                '-a', 'time',  # aggregate over time only
-                               '-v', 'LATIXY,LONGXY,PRECTmms',
+                               '-v', 'LATIXY,LONGXY,{}'.format(self.varname),
                                this_file, fnames_mon_totals[-1]]
                 subp_wrapper(cmd_get_tot)
                 # fix the time variable to contain months since 1 Jan 1948
@@ -101,7 +103,7 @@ class QianTotaller(object):
                     raise
             # append monthly total to one netcdf file
             cmd_concat = (['ncecat', '-c', '-O', '--rcd_nm', 'time',
-                           '-v', 'time,PRECTmms'] +
+                           '-v', 'time,{}'.format(self.varname)] +
                           fnames_mon_totals)
             cmd_concat.append(os.path.join(self.output_dir, self.output_fname))
             subp_wrapper(cmd_concat)
@@ -182,10 +184,21 @@ if __name__ == "__main__":
     """
     qian_data_dir = os.path.join('/', 'project', 'projectdirs',
                                  'ccsm1', 'inputdata', 'atm', 'datm7',
-                                 'atm_forcing.datm7.Qian.T62.c080727',
-                                 'Precip6Hrly')
-    qt = QianTotaller(qian_data_dir,
-                      output_dir=os.getenv('SCRATCH'),
-                      output_fname='qian_pcp_monthly_totals.nc')
-    qt.get_filenames()
-    qt.totaller()
+                                 'atm_forcing.datm7.Qian.T62.c080727')
+    qian_pcp_dir = os.path.join(qian_data_dir, 'Precip6Hrly')
+    qian_solar_dir = os.path.join(qian_data_dir, 'Solar6Hrly')
+    # total the pcp data
+    qian_pcp_tot = QianTotaller('PRECTmms',
+                                qian_pcp_dir,
+                                output_dir=os.getenv('CSCRATCH'),
+                                output_fname='qian_pcp_monthly_pcp_totals.nc')
+    qian_pcp_tot.get_filenames()
+    qian_pcp_tot.totaller()
+    # total radiation data
+    qian_rad_tot = QianTotaller(
+        'FSDS',
+        qian_solar_dir,
+        output_dir=os.getenv('CSCRATCH'),
+        output_fname='qian_pcp_monthly_radiation_totals.nc')
+    qian_rad_tot.get_filenames()
+    qian_rad_tot.totaller()
