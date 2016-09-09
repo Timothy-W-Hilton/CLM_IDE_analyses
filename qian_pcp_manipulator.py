@@ -79,24 +79,26 @@ class QianMonthlyPCPData(object):
     The monthly total values are calculated by QianTotaller
     """
 
-    def __init__(self, fname):
+    def __init__(self, fname, var):
         """populate field monthly_pcp
 
         ARGS:
             fname (string): full path to file containing monthly PCP
-                from QianTotaller """
+                from QianTotaller
+            var (string): name of the relevant variable in fname"""
+
         self.fname = fname
         self.lon = None
         self.lat = None
-        self.pcp_all = None
-        self.pcp = None
+        self.data_all = None
+        self.data = None
 
     def read_nc(self):
-        """read pcp data from netcdf file
+        """read data from netcdf file
         """
         nc = netCDF4.Dataset(self.fname, 'r')
         s_per_6hrs = 6.0 * 60.0 * 60.0  # seconds in 6 hours
-        self.pcp_all = nc.variables['PRECTmms'][:] * s_per_6hrs
+        self.data_all = nc.variables['PRECTmms'][:] * s_per_6hrs
         self.lon = nc.variables['LONGXY'][...]
         self.lat = nc.variables['LATIXY'][...]
         nc.close()
@@ -106,9 +108,9 @@ class QianMonthlyPCPData(object):
 
         ARGS:
             mask (arraylike): an optional mask.  If supplied, it must
-                have shape (nlon, lat) matching the size of the pcp
+                have shape (nlon, lat) matching the size of the data
                 grid.  Must containin boolean values: where True the
-                PCP data are to be read, where False the PCP data are
+                DATA data are to be read, where False the DATA data are
                 ignored. """
         if mask is None:
             x = slice(None)
@@ -124,7 +126,7 @@ class QianMonthlyPCPData(object):
         spline approximation over a rectangular mesh to regrid the
         data to a specified lon, lat grid.
 
-        The regridded values are placed in self.pcp.
+        The regridded values are placed in self.data.
 
         PARAMETERS:
         lon, lat: ndarray; of arbitrary longitudes and latitudes.  Must
@@ -142,10 +144,10 @@ class QianMonthlyPCPData(object):
 
         self.dlon = dlon
         self.dlat = dlat
-        ntime = self.pcp_all.shape[0]
+        ntime = self.data_all.shape[0]
         nlon = dlon.shape[0]
         nlat = dlat.shape[1]
-        self.pcp = np.zeros((ntime, nlon, nlat))
+        self.data = np.zeros((ntime, nlon, nlat))
 
         for t in np.arange(ntime):
             if np.mod(t, 100) == 0:
@@ -153,9 +155,9 @@ class QianMonthlyPCPData(object):
             finterp = interpolate.RectBivariateSpline(
                 self.lon[0, :],
                 self.lat[:, 0],
-                np.transpose(self.pcp_all[t, ...]))
-            self.pcp[t, ...] = finterp.ev(dlon, dlat)
-            self.pcp[self.pcp < 0] = 0.0
+                np.transpose(self.data_all[t, ...]))
+            self.data[t, ...] = finterp.ev(dlon, dlat)
+            self.data[self.data < 0] = 0.0
 
     def get_IDE_reduction(self):
         """calculate IDE precipitation reduction
@@ -165,15 +167,15 @@ class QianMonthlyPCPData(object):
         protocol is to reduce the precipitation at each site to 1% of
         the long-term average annual precipitation.
         get_IDE_reduction_pct() calculates that redution for each Qian
-        pcp data pixel as ((1st percentile) / (50th percentile)), with
+        data data pixel as ((1st percentile) / (50th percentile)), with
         the percentiles calculated from the compete time series of
-        annual total pcp for each grid cell.
+        annual total data for each grid cell.
 
         RETURNS:
         an NxM numpy array of values in the range [0.0, 1.0].  NxM are
-           the number of rows and columns, respectively, in the pcp data.
+           the number of rows and columns, respectively, in the data data.
         """
-        pctl = ma.masked_invalid(np.percentile(a=self.pcp, q=(1, 50), axis=0))
+        pctl = ma.masked_invalid(np.percentile(a=self.data, q=(1, 50), axis=0))
         frac = pctl[0, ...] / pctl[1, ...]
         return frac
 
@@ -191,8 +193,8 @@ class QianMonthlyPCPData(object):
         bool
             True if successful, False otherwise
         """
-        if self.pcp is None:
-            raise ValueError('pcp not yet parsed')
+        if self.data is None:
+            raise ValueError('data not yet parsed')
 
         frac = self.get_IDE_reduction()
 
@@ -258,7 +260,7 @@ class QianMonthlyPCPData(object):
                 print("Unexpected error:", sys.exc_info()[0])
                 raise
         cb = plt.colorbar(cm, cax=ax3, orientation='horizontal')
-        cb.ax.set_xlabel('1948 - 2005 pcp: (1st percentile / 50th percentile)')
+        cb.ax.set_xlabel('1948 - 2005 data: (1st percentile / 50th percentile)')
         fig.tight_layout()
         fig.savefig(
             os.path.join(os.getenv('HOME'), 'plots', 'maptest',
@@ -266,19 +268,19 @@ class QianMonthlyPCPData(object):
                              self.lat.size != self.dlat.size)))
         plt.close(fig)
 
-    def recycle_pcp(self, yearstart, yearend):
+    def recycle_data(self, yearstart, yearend):
         """CLM spinup run used 1972-2004 Qian data, recycled to the length of
         the spinup (51 years).  Here, take the 1948...2004 Qian data
         and recycle it to 1972...2004,1972...198?
         """
-        nyrs_raw = self.pcp.shape[0]
+        nyrs_raw = self.data.shape[0]
         nyrs_recycled = yearend - yearstart + 1
         yrs_raw = np.arange(1948, 1948 + nyrs_raw + 5)[0:nyrs_raw]
         idx_yearstart = np.nonzero(yrs_raw == yearstart)[0][0]
         nreps = np.int(np.ceil(np.float(nyrs_raw) / np.float(nyrs_recycled)))
-        pcp_recycled = np.tile(self.pcp[idx_yearstart:-1, ...], (nreps, 1, 1))
-        pcp_recycled = pcp_recycled[1:(nyrs_raw + 1), ...]
-        self.pcp = pcp_recycled
+        data_recycled = np.tile(self.data[idx_yearstart:-1, ...], (nreps, 1, 1))
+        data_recycled = data_recycled[1:(nyrs_raw + 1), ...]
+        self.data = data_recycled
 
 
 def get_f05g16_pcp(interp_flag=False):
@@ -299,7 +301,7 @@ def get_f05g16_pcp(interp_flag=False):
     else:
         qd.dlat = qd.lat
         qd.dlon = qd.lon
-        qd.pcp = qd.pcp_all
+        qd.data = qd.data_all
     qd.pcp_reduction_to_netcdf('./pcp_reduction_frac.nc')
     return qd
 
@@ -338,28 +340,28 @@ def setup_worldmap(ax):
 def check_results(qd, dlon, dlat):
     fig, ax = plt.subplots(2, 1, figsize=(8.5, 11))
     cmap = plt.get_cmap('Blues')
-    cm = ax[0].pcolormesh(qd.lon, qd.lat, qd.pcp_all[0, ...],
+    cm = ax[0].pcolormesh(qd.lon, qd.lat, qd.data_all[0, ...],
                           cmap=cmap)
     for this_ax in ax:
         this_ax.set_xlabel('lon E')
         this_ax.set_ylabel('lat N')
     cb = plt.colorbar(cm, ax=ax[0])
-    cm = ax[1].pcolormesh(dlon, dlat, qd.pcp[0, ...],
+    cm = ax[1].pcolormesh(dlon, dlat, qd.data[0, ...],
                           cmap=cmap)
     cb = plt.colorbar(cm, ax=ax[1])
     fig.savefig(os.path.join(os.getenv('HOME'), 'plots',
-                             'qian_pcpinterp_test.png'))
+                             'qian_datainterp_test.png'))
     plt.close(fig)
 
-    print "T62 min, max: ", qd.pcp_all[0, ...].min(), qd.pcp_all[0, ...].max()
-    print "0.5 deg min, max: ", qd.pcp[0, ...].min(), qd.pcp[0, ...].max()
+    print "T62 min, max: ", qd.data_all[0, ...].min(), qd.data_all[0, ...].max()
+    print "0.5 deg min, max: ", qd.data[0, ...].min(), qd.data[0, ...].max()
 
 
 def site_summary(qd, site):
 
     y, x = (site.clm_y, site.clm_x)
-    pcp = qd.pcp[:, y, x]
-    pctl01, pctl50 = np.percentile(a=qd.pcp[:, y, x], q=(1, 50))
+    pcp = qd.data[:, y, x]
+    pctl01, pctl50 = np.percentile(a=qd.data[:, y, x], q=(1, 50))
     fig, ax = plt.subplots(1, 1, figsize=[8, 8])
     ax.scatter(np.arange(len(pcp)) + 1948, pcp)
     ax.set_xlabel('year')
@@ -382,7 +384,7 @@ def create_reduced_pcp():
     directory and reduce each grid cell's precipitation according to
     the International Drought Experiment (IDE) protocol
     """
-    qd = get_f05g16_pcp(interp_flag=False)
+    qd = get_f05g16_data(interp_flag=False)
     frac = qd.get_IDE_reduction()
     qt = QianTotaller(
         data_dir=os.path.join('/', 'project', 'projectdirs',
