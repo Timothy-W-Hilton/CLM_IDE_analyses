@@ -170,8 +170,8 @@ if __name__ == "__main__":
     (domain_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, sedgewick,
      boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
-    qd, wt, LE = get_data()
-    qd.recycle_pcp(1972, 2004)
+    qd_pcp, qd_rad, wt, LE = get_data()
+    qd_pcp.recycle_pcp(1972, 2004)
 
     LE_sum = get_LE_ann_sum(LE)
     lon = domain_f05_g16.lon
@@ -187,11 +187,11 @@ if __name__ == "__main__":
         ylim = get_range(locations, this_sum)
         ylim_cal = get_region_range(calmask, this_sum)
         for tidx0 in np.arange(0, 50, 5):
-            draw_pcp_scatter(qd, this_var, calmask, tidx0, tidx0 + 5,
+            draw_pcp_scatter(qd_pcp, this_var, calmask, tidx0, tidx0 + 5,
                              ylim=ylim_cal)
-            for loc in locations:
-                draw_pcp_scatter_loc(qd, this_var, loc, tidx0, tidx0+5,
-                                     ylim=ylim)
-        for loc in locations:
-            draw_pcp_timeseries(qd, this_var, loc,
-                                tidx0=0, tidx1=50, ylim=ylim)
+        #     for loc in locations:
+        #         draw_pcp_scatter_loc(qd_pcp, this_var, loc, tidx0, tidx0+5,
+        #                              ylim=ylim)
+        # for loc in locations:
+        #     draw_pcp_timeseries(qd_pcp, this_var, loc,
+        #                         tidx0=0, tidx1=50, ylim=ylim)
