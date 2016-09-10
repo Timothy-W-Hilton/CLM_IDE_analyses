@@ -13,9 +13,6 @@ import calendar
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from clm_domain import CLM_Domain, Location
-
-
 class ARM_data(object):
     """container class for ARM Southern Great Plains Ameriflux data
     """
@@ -158,11 +155,15 @@ class CLM_spinup_analyzer(object):
         self.CASE = CASE
         self.gather_filenames()
 
-    def gather_filenames(self):
+    def gather_filenames(self, glob_pat="*.nc"):
         """gather all netCDF (*.nc) filenames from self.data_dir and place
-        them in self.data_filenames
+        them in self.all_files
+
+        Args:
+        glob_pat (string): globbing pattern to apply to the files in
+            self.data_dir.  Default is "*.nc"
         """
-        self.all_files = sorted(glob.glob(os.path.join(self.data_dir, "*.nc")))
+        self.all_files = sorted(glob.glob(os.path.join(self.data_dir, glob_pat)))
 
     def build_fname(self, year, month):
         """assemble the filename for the
@@ -488,6 +489,8 @@ def plot_monthly_timeseries(spinup_run, var, location):
 
 
 def CLMf05g16_get_spatial_info():
+    from clm_domain import CLM_Domain, Location
+
     CLM_f05_g16 = CLM_spinup_analyzer(os.path.join('/', 'global',
                                                    'cscratch1', 'sd',
                                                    'twhilton',
