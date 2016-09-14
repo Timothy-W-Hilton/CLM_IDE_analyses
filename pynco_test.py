@@ -23,8 +23,11 @@ if __name__ == "__main__":
     print "concatenating netcdf files (start: {})".format(
         t0.strftime("%H:%M:%S"))
     varname = "H2OSOI"
+    out_fname = os.path.join(os.getenv('CSCRATCH'),
+                             "out_avg_{}.nc".format(varname))
+    print "out_fname: {}".format(out_fname)
     if len(ctl_clm_run.all_files) is not 0:
         nco.ncra(input=ctl_clm_run.all_files,
-                 output="out_avg_{}.nc".format(varname),
+                 output=out_fname,
                  options="--mro -O -F -d time,1,,24,24 -v {}".format(varname))
     print "done concatenating (t = {})".format(datetime.now() - t0)
