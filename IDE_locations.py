@@ -8,7 +8,7 @@ def CLMf05g16_get_spatial_info():
                                              'lnd',
                                              'hist',
                                              'CLM_f05_g16.clm2.h0.0051-09.nc'))
-    santacruz = Location((-122.03089741, ), (36.9741, ), 'Santa Cruz')
+    santacruz = Location((-122.03089741, ), (36.9741, ), 'Younger Lagoon')
     santacruz.get_clm_xy(domain_f05_g16)
     mclaughlin = Location((-122.431667, ), (38.873889, ), 'McLaughlin NRS')
     mclaughlin.get_clm_xy(domain_f05_g16)
