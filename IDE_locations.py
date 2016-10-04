@@ -1,6 +1,7 @@
 import os
 from clm_domain import CLM_Domain, Location
 
+
 def CLMf05g16_get_spatial_info():
     domain_f05_g16 = CLM_Domain(os.path.join(os.getenv('CSCRATCH'),
                                              'archive',
