@@ -38,5 +38,6 @@ if __name__ == "__main__":
     ax[0].set_title('{}'.format(locs[0].name))
     ax[0].legend(loc='best')
     fig.tight_layout()
-    fig.savefig(os.path.join(os.getenv('CSCRATCH'), 'YL.pdf'))
+    fig.savefig(os.path.join(os.getenv('CSCRATCH'),
+                             '{}.pdf'.format(locs[0].name)))
     # plt.show()
