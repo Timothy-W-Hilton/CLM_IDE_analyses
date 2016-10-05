@@ -173,7 +173,7 @@ if __name__ == "__main__":
             sys.stdout.flush()
 
     # plt.rcParams['figure.figsize']=(10,10)
-    for v in vars[0:1]:
+    for v in vars:
         df = pd.concat([data[r][loc.name][v].data
                         for r in runs for loc in locs])
         df['fyear'] = df['time'] / 365.0
@@ -190,6 +190,9 @@ if __name__ == "__main__":
                               units=data[r][loc.name][v].vunits))
         g.set_titles(template='{col_name}')
         g.fig.get_axes()[0].legend(loc='best')
+        g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
+                               '{var}_timeseries.pdf'.format(var=v)))
+        plt.close(g.fig)
 
     # alldata = pd.concat([data[r][v].data for r in runs for v in vars])
 
