@@ -52,6 +52,7 @@ class MonthlyParser(object):
         self.fname = fname
         self.data_file = os.path.join(self.datadir, self.fname)
         self.varname = varname
+        self.vunits = ''
 
     def parse(self, t0=datetime(2001, 1, 1, 0, 0, 0), loc=None):
         """parse a variable and time stamp from netCDF
@@ -153,6 +154,7 @@ if __name__ == "__main__":
     domain = sp_info[0]
     locs = sp_info[1:]
     data = Vividict()
+    units = Vividict()
     for this_loc in locs:
         sys.stdout.write('reading {}\n'.format(this_loc.name))
         for this_run in runs:
@@ -166,19 +168,27 @@ if __name__ == "__main__":
                                    this_var)
                 mp.parse(loc=this_loc)
                 data[this_run][this_loc.name][this_var] = mp
+                units[this_run][this_loc.name][this_var] = mp.vunits
             sys.stdout.write('\n')
             sys.stdout.flush()
 
+    # plt.rcParams['figure.figsize']=(10,10)
     for v in vars[0:1]:
         df = pd.concat([data[r][loc.name][v].data
                         for r in runs for loc in locs])
+        df['fyear'] = df['time'] / 365.0
         with sns.axes_style("white"):
             g = sns.FacetGrid(df, hue='case', palette="Set1",
                               col='loc', col_wrap=3,
-                              size=5, aspect=2,
+                              size=3, aspect=1.5,
                               hue_kws={"marker": ["^", "v"],
                                        "linestyle": ['-', '-']})
-        g.map(plt.plot, 'date', 'value')
+        g.map(plt.plot, 'fyear', 'value')
+        g.set_axis_labels(x_var='year of simulation',
+                          y_var='{var} ({units})'.format(
+                              var=v,
+                              units=data[r][loc.name][v].vunits))
+        g.set_titles(template='{col_name}')
         g.fig.get_axes()[0].legend(loc='best')
 
     # alldata = pd.concat([data[r][v].data for r in runs for v in vars])
