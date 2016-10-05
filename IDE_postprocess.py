@@ -2,6 +2,8 @@ import os
 import netCDF4
 import numpy as np
 import itertools
+import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 from spinup_diagnostics import CLM_spinup_analyzer as CSA
 import IDE_locations
@@ -22,15 +24,23 @@ class MonthlyParser(object):
         self.data_file = os.path.join(self.datadir, self.fname)
         self.varname = varname
 
-    def parse(self, t0=datetime(1, 1, 1, 0, 0, 0), loc=None):
+    def parse(self, t0=datetime(2001, 1, 1, 0, 0, 0), loc=None):
         """parse a variable and time stamp from netCDF
         """
         nc = netCDF4.Dataset(os.path.join(self.datadir, self.fname))
-        self.data = nc.variables[self.varname][...]
-        self.vunits = nc.variables[self.varname].units
         self.time = nc.variables['time'][:]
         self.tunits = nc.variables['time'].units
         self.t0 = t0
+        self.calc_moy()
+        if loc is None:
+            self.data = nc.variables[self.varname][...]
+        else:
+            data = nc.variables[self.varname][:, loc.clm_y, loc.clm_x]
+            self.data = pd.DataFrame(index=self.dt,
+                                     data={self.varname: data,
+                                           'time': self.time,
+                                           'case': self.casename})
+        self.vunits = nc.variables[self.varname].units
         nc.close()
 
     def calc_moy(self):
@@ -106,21 +116,30 @@ if __name__ == "__main__":
     data_dir = os.path.join(os.getenv('CSCRATCH'), 'monthly_means')
     runs = ['ctl', 'redpcp']
     vars = ['FPSN', 'WT']
+    locs = IDE_locations.CLMf05g16_get_spatial_info()
     data = dict.fromkeys(runs, None)
     for this_run in data.keys():
         data[this_run] = {}
         for this_var in vars:
             mp = MonthlyParser(this_run, data_dir,
                                'IDE_{}_h1avg.nc'.format(this_run), this_var)
-            mp.parse()
-            mp.calc_moy()
+            mp.parse(loc=locs[1])
             data[this_run][this_var] = mp
 
-    locs = IDE_locations.CLMf05g16_get_spatial_info()
-    x, y = (locs[1].clm_x, locs[1].clm_y)
-    plt.figure()
-    plt.plot(data['ctl']['FPSN'].time, data['ctl']['FPSN'].data[:, y, x],
-             data['redpcp']['FPSN'].time, data['redpcp']['FPSN'].data[:, y, x])
-    plt.figure()
-    plt.plot(data['ctl']['WT'].time, data['ctl']['WT'].data[:, y, x],
-             data['redpcp']['WT'].time, data['redpcp']['WT'].data[:, y, x])
+
+    # x, y = (locs[1].clm_x, locs[1].clm_y)
+    # plt.figure()
+    # plt.plot(data['ctl']['FPSN'].time, data['ctl']['FPSN'].data[:, y, x],
+    #          data['redpcp']['FPSN'].time, data['redpcp']['FPSN'].data[:, y, x])
+    # plt.figure()
+    # plt.plot(data['ctl']['WT'].time, data['ctl']['WT'].data[:, y, x],
+    #          data['redpcp']['WT'].time, data['redpcp']['WT'].data[:, y, x])
+
+    for v in vars:
+        df = pd.concat([data[r][v].data for r in runs])
+        with sns.axes_style("white"):
+            g = sns.FacetGrid(df, hue='case', palette="Set1",
+                              size=5, hue_kws={"marker": ["^", "v"],
+                                               "linestyle": ['-', '-']})
+        g.map(plt.plot, "time", v)
+        g.add_legend()
