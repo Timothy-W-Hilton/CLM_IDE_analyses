@@ -14,6 +14,34 @@ def month_from_t0_offset(ndays, t0):
     return (timedelta(days=float(ndays)) + t0)
 
 
+class Vividict(dict):
+    """
+    http://stackoverflow.com/questions/635483/what-is-the-best-way-to-implement-nested-dictionaries-in-python
+    """
+    def __missing__(self, key):
+        value = self[key] = type(self)()
+        return value
+
+
+class CLMSiteContainer(object):
+    """container for site-specific CLM data
+    """
+    def __init__(self, loc):
+        """itialize run, var, loc
+
+        """
+        self.runs = []
+        self.vars = []
+        self.loc = loc
+        self.data = Vividict()
+
+    def add_var(self, run, var, df):
+        self.data[run][var] = df
+
+    def get_var(self, run, var, df):
+        return data[run][var]
+
+
 class MonthlyParser(object):
     """parses monthly mean CLM data
     """
@@ -37,9 +65,12 @@ class MonthlyParser(object):
         else:
             data = nc.variables[self.varname][:, loc.clm_y, loc.clm_x]
             self.data = pd.DataFrame(index=self.dt,
-                                     data={self.varname: data,
+                                     data={'value': data,
+                                           'date': self.dt,
                                            'time': self.time,
-                                           'case': self.casename})
+                                           'case': self.casename,
+                                           'var': self.varname,
+                                           'loc': loc.name})
         self.vunits = nc.variables[self.varname].units
         nc.close()
 
@@ -64,6 +95,7 @@ class MonthlyParser(object):
 
     def get_moy(self):
         return self.moy
+
 
 
 # if __name__ == "__main__":
@@ -114,32 +146,38 @@ class MonthlyParser(object):
 
 if __name__ == "__main__":
     data_dir = os.path.join(os.getenv('CSCRATCH'), 'monthly_means')
-    runs = ['ctl', 'redpcp']
-    vars = ['FPSN', 'WT']
-    locs = IDE_locations.CLMf05g16_get_spatial_info()
-    data = dict.fromkeys(runs, None)
-    for this_run in data.keys():
-        data[this_run] = {}
-        for this_var in vars:
-            mp = MonthlyParser(this_run, data_dir,
-                               'IDE_{}_h1avg.nc'.format(this_run), this_var)
-            mp.parse(loc=locs[1])
-            data[this_run][this_var] = mp
+    runs = ['CTL', 'IDE']
+    vars = ['FPSN', 'WT', 'EFLX_LH_TOT_R']
+    sp_info = IDE_locations.CLMf05g16_get_spatial_info()
+    domain = sp_info[0]
+    locs = sp_info[1:]
+    data = Vividict()
+    for this_loc in locs:
+        for this_run in runs:
+            for this_var in vars:
+                print "reading {}: {}".format(this_run, this_var)
+                mp = MonthlyParser(this_run,
+                                   data_dir,
+                                   'IDE_{}_h1avg.nc'.format(this_run),
+                                   this_var)
+                mp.parse(loc=this_loc)
+                data[this_run][this_loc.name][this_var] = mp
 
-
-    # x, y = (locs[1].clm_x, locs[1].clm_y)
-    # plt.figure()
-    # plt.plot(data['ctl']['FPSN'].time, data['ctl']['FPSN'].data[:, y, x],
-    #          data['redpcp']['FPSN'].time, data['redpcp']['FPSN'].data[:, y, x])
-    # plt.figure()
-    # plt.plot(data['ctl']['WT'].time, data['ctl']['WT'].data[:, y, x],
-    #          data['redpcp']['WT'].time, data['redpcp']['WT'].data[:, y, x])
-
-    for v in vars:
-        df = pd.concat([data[r][v].data for r in runs])
+    for v in vars[0:1]:
+        df = pd.concat([data[r][loc.name][v].data
+                        for r in runs for loc in locs])
         with sns.axes_style("white"):
-            g = sns.FacetGrid(df, hue='case', palette="Set1",
-                              size=5, hue_kws={"marker": ["^", "v"],
-                                               "linestyle": ['-', '-']})
-        g.map(plt.plot, "time", v)
-        g.add_legend()
+            g = sns.FacetGrid(df, hue='case', palette="Set1", col='loc',
+                              size=5, aspect=2,
+                              hue_kws={"marker": ["^", "v"],
+                                       "linestyle": ['-', '-']})
+        g.map(plt.plot, 'date', 'value')
+        g.fig.get_axes()[0].legend(loc='best')
+
+    # alldata = pd.concat([data[r][v].data for r in runs for v in vars])
+
+    # with sns.axes_style("white"):
+    #     g = sns.FacetGrid(alldata, col='loc',
+    #                       hue='case', palette="Set1",
+    #                       size=2, aspect=1)
+    # g.map(plt.plot, 'date', 'value')
