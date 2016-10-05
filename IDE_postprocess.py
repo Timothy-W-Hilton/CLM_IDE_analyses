@@ -74,6 +74,7 @@ class MonthlyParser(object):
                                            'var': self.varname,
                                            'loc': loc.name})
         self.vunits = nc.variables[self.varname].units
+        self.lname = nc.variables[self.varname].long_name
         nc.close()
 
     def calc_moy(self):
@@ -149,7 +150,10 @@ class MonthlyParser(object):
 if __name__ == "__main__":
     data_dir = os.path.join(os.getenv('CSCRATCH'), 'monthly_means')
     runs = ['CTL', 'IDE']
-    vars = ['FPSN', 'WT', 'EFLX_LH_TOT_R']
+    #TODO: H2OSOI & other variables with soil depth dimension
+    vars = ['FPSN', 'WT', 'EFLX_LH_TOT_R', 'FCTR', 'FGEV', 'FIRA', 'FSH',
+            'FSH_V', 'H2OSNO', 'H2OSOI', 'QBOT', 'QCHARGE', 'QDRAI',
+            'QINFL', 'QVEGT', 'TBOT', 'ZWT']
     sp_info = IDE_locations.CLMf05g16_get_spatial_info()
     domain = sp_info[0]
     locs = sp_info[1:]
@@ -173,12 +177,15 @@ if __name__ == "__main__":
             sys.stdout.flush()
 
     # plt.rcParams['figure.figsize']=(10,10)
+    sys.stdout.write('plotting ')
     for v in vars:
+        sys.stdout.write('{} '.format(v))
+        sys.stdout.flush()
         df = pd.concat([data[r][loc.name][v].data
                         for r in runs for loc in locs])
         df['fyear'] = df['time'] / 365.0
         with sns.axes_style("white"):
-            g = sns.FacetGrid(df, hue='case', palette="Set1",
+            g = sns.FacetGrid(df, hue='case', palette="Dark2",
                               col='loc', col_wrap=3,
                               size=3, aspect=1.5,
                               hue_kws={"marker": ["^", "v"],
@@ -190,10 +197,16 @@ if __name__ == "__main__":
                               units=data[r][loc.name][v].vunits))
         g.set_titles(template='{col_name}')
         g.fig.get_axes()[0].legend(loc='best')
+        plt.figtext(0.5, 0.99,
+                    '{shortname}: {longname}'.format(
+                        shortname=v,
+                        longname=data[r][loc.name][v].lname),
+                    horizontalalignment='center')
         g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
                                '{var}_timeseries.pdf'.format(var=v)))
         plt.close(g.fig)
-
+    sys.stdout.write('\n')
+    sys.stdout.flush()
     # alldata = pd.concat([data[r][v].data for r in runs for v in vars])
 
     # with sns.axes_style("white"):
