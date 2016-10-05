@@ -1,4 +1,5 @@
 import os
+import sys
 import netCDF4
 import numpy as np
 import itertools
@@ -153,21 +154,27 @@ if __name__ == "__main__":
     locs = sp_info[1:]
     data = Vividict()
     for this_loc in locs:
+        sys.stdout.write('reading {}\n'.format(this_loc.name))
         for this_run in runs:
+            sys.stdout.write('    {}: '.format(this_run))
             for this_var in vars:
-                print "reading {}: {}".format(this_run, this_var)
+                sys.stdout.write(' {} '.format(this_var))
+                sys.stdout.flush()
                 mp = MonthlyParser(this_run,
                                    data_dir,
                                    'IDE_{}_h1avg.nc'.format(this_run),
                                    this_var)
                 mp.parse(loc=this_loc)
                 data[this_run][this_loc.name][this_var] = mp
+            sys.stdout.write('\n')
+            sys.stdout.flush()
 
     for v in vars[0:1]:
         df = pd.concat([data[r][loc.name][v].data
                         for r in runs for loc in locs])
         with sns.axes_style("white"):
-            g = sns.FacetGrid(df, hue='case', palette="Set1", col='loc',
+            g = sns.FacetGrid(df, hue='case', palette="Set1",
+                              col='loc', col_wrap=3,
                               size=5, aspect=2,
                               hue_kws={"marker": ["^", "v"],
                                        "linestyle": ['-', '-']})
