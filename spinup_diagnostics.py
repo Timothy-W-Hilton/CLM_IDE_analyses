@@ -2,9 +2,6 @@
 toward parsing time series of a few key variables and making sure the
 spinup achieved steady state """
 
-import matplotlib
-matplotlib.use('AGG')
-
 import netCDF4
 import numpy as np
 import os
@@ -12,6 +9,60 @@ import glob
 import calendar
 import matplotlib.pyplot as plt
 import pandas as pd
+
+import matplotlib
+matplotlib.use('AGG')
+
+
+def tstamp_iter(y0, m0, d0, H0, M0=0, S0=0, dt=6, dt_units='h', n=1):
+    """timestamp iterator
+
+    provides a generator to iterate through timestamps given a
+    starting time, interval, and number of steps
+
+    ARGS:
+    y0 (int): initial year
+    m0 (int): initial month
+    d0 (int): initial day
+    H0 (int): initial hour
+    M0 (int): initial minute (default is 0)
+    S0 (int): initial second (default is 0)
+    dt (int): timestep
+    dt_units (str): timestep units (default is hours).  Must be one of
+       the acceptable units for numpy.timedelta64: Y, M, W, D, h, m,
+       s, ms, us, ns, ps, fs, as
+    n: number of timesteps to generate (default is 1)
+    """
+    t0 = np.datetime64('{y:04d}-{m:02d}-{d:02d}T{H:02d}:{M:02d}:{S:02d}'.format(
+        y=y0, m=m0, d=d0, H=H0, M=M0, S=S0))
+    dt = np.timedelta64(dt, dt_units)
+    for this_t in range(n):
+        yield t0 + dt
+        t0 += dt
+
+
+def format_clm_fname(t, case, nhist, incl_secs=True):
+    """generate CLM history filename
+
+    generate CLM history filename from timestamp, case name, and
+    output history stream number
+
+    ARGS:
+    t (numpy.datetime64): timestamp of the history file
+    case (str): case name of the CLM run
+    nhist (int): history streamfile number
+    """
+    tdt = pd.to_datetime(t)
+    nsecs = (tdt.hour * 60 * 60) + (tdt.minute * 60) + tdt.second
+    fname = ('{case}.clm2.h{n}.'
+             '{year:04d}-{mon:02d}-{day:02d}.nc').format(
+                 case=case, n=nhist,
+                 year=tdt.year, mon=tdt.month, day=tdt.day)
+    if incl_secs is False:
+        return fname
+    else:
+        return fname.replace('.nc', '-{:05d}.nc'.format(nsecs))
+
 
 class ARM_data(object):
     """container class for ARM Southern Great Plains Ameriflux data
