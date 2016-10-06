@@ -151,9 +151,10 @@ if __name__ == "__main__":
     data_dir = os.path.join(os.getenv('CSCRATCH'), 'monthly_means')
     runs = ['CTL', 'IDE']
     #TODO: H2OSOI & other variables with soil depth dimension
-    vars = ['FPSN', 'WT', 'EFLX_LH_TOT_R', 'FCTR', 'FGEV', 'FIRA', 'FSH',
-            'FSH_V', 'H2OSNO', 'H2OSOI', 'QBOT', 'QCHARGE', 'QDRAI',
+    h1vars = ['FPSN', 'WT', 'EFLX_LH_TOT_R', 'FCTR', 'FGEV', 'FIRA', 'FSH',
+            'FSH_V', 'H2OSNO', 'QBOT', 'QCHARGE', 'QDRAI',
             'QINFL', 'QVEGT', 'TBOT', 'ZWT']
+    h2vars = ['BTRAN', 'FSDS', 'QOVER', 'QRUNOFF', 'QVEGE', 'RAIN']
     sp_info = IDE_locations.CLMf05g16_get_spatial_info()
     domain = sp_info[0]
     locs = sp_info[1:]
@@ -163,12 +164,12 @@ if __name__ == "__main__":
         sys.stdout.write('reading {}\n'.format(this_loc.name))
         for this_run in runs:
             sys.stdout.write('    {}: '.format(this_run))
-            for this_var in vars:
+            for this_var in h2vars:
                 sys.stdout.write(' {} '.format(this_var))
                 sys.stdout.flush()
                 mp = MonthlyParser(this_run,
                                    data_dir,
-                                   'IDE_{}_h1avg.nc'.format(this_run),
+                                   'IDE_{}_h2avg.nc'.format(this_run),
                                    this_var)
                 mp.parse(loc=this_loc)
                 data[this_run][this_loc.name][this_var] = mp
@@ -178,7 +179,7 @@ if __name__ == "__main__":
 
     # plt.rcParams['figure.figsize']=(10,10)
     sys.stdout.write('plotting ')
-    for v in vars:
+    for v in h2vars:
         sys.stdout.write('{} '.format(v))
         sys.stdout.flush()
         df = pd.concat([data[r][loc.name][v].data
@@ -207,10 +208,3 @@ if __name__ == "__main__":
         plt.close(g.fig)
     sys.stdout.write('\n')
     sys.stdout.flush()
-    # alldata = pd.concat([data[r][v].data for r in runs for v in vars])
-
-    # with sns.axes_style("white"):
-    #     g = sns.FacetGrid(alldata, col='loc',
-    #                       hue='case', palette="Set1",
-    #                       size=2, aspect=1)
-    # g.map(plt.plot, 'date', 'value')
