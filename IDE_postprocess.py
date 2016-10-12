@@ -141,26 +141,45 @@ if __name__ == "__main__":
         df = pd.concat([data[r][loc.name][v].data
                         for r in runs for loc in cal_locs])
         df['fyear'] = df['time'] / 365.0
+        df['month'] = df.index.month
+        with sns.axes_style("white"):
+            g = sns.factorplot(data=df, x='month', y='value',
+                               col='loc', hue='case',
+                               kind='box', col_wrap=3)
+            g.set_axis_labels(x_var='month',
+                              y_var='{var} ({units})'.format(
+                                  var=v,
+                                  units=data[r][loc.name][v].vunits))
+            g.set_titles(template='{col_name}')
+            g.fig.get_axes()[0].legend(loc='best')
+            plt.figtext(0.5, 0.99,
+                        '{shortname}: {longname}'.format(
+                            shortname=v,
+                            longname=data[r][loc.name][v].lname),
+                        horizontalalignment='center')
+            g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
+                                   '{var}_bymonth.pdf'.format(var=v)))
+            plt.close(g.fig)
         with sns.axes_style("white"):
             g = sns.FacetGrid(df, hue='case', palette="Dark2",
                               col='loc', col_wrap=3,
                               size=3, aspect=1.5,
                               hue_kws={"marker": ["^", "v"],
                                        "linestyle": ['-', '-']})
-        g.map(plt.plot, 'fyear', 'value')
-        g.set_axis_labels(x_var='year of simulation',
-                          y_var='{var} ({units})'.format(
-                              var=v,
-                              units=data[r][loc.name][v].vunits))
-        g.set_titles(template='{col_name}')
-        g.fig.get_axes()[0].legend(loc='best')
-        plt.figtext(0.5, 0.99,
-                    '{shortname}: {longname}'.format(
-                        shortname=v,
-                        longname=data[r][loc.name][v].lname),
-                    horizontalalignment='center')
-        g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
-                               '{var}_timeseries.pdf'.format(var=v)))
-        plt.close(g.fig)
+            g.map(plt.plot, 'fyear', 'value')
+            g.set_axis_labels(x_var='year of simulation',
+                              y_var='{var} ({units})'.format(
+                                  var=v,
+                                  units=data[r][loc.name][v].vunits))
+            g.set_titles(template='{col_name}')
+            g.fig.get_axes()[0].legend(loc='best')
+            plt.figtext(0.5, 0.99,
+                        '{shortname}: {longname}'.format(
+                            shortname=v,
+                            longname=data[r][loc.name][v].lname),
+                        horizontalalignment='center')
+            g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
+                                   '{var}_timeseries.pdf'.format(var=v)))
+            plt.close(g.fig)
     sys.stdout.write('\n')
     sys.stdout.flush()
