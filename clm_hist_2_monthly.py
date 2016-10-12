@@ -19,7 +19,7 @@ def month_year_iter(start_month, start_year, end_month, end_year):
 if __name__ == "__main__":
     which_hist = 'h1'
     cases = ['IDE_ctl', 'IDE_redpcp']
-    cases = ['IDE_redpcp']
+    cases_out = {'IDE_ctl': 'IDE_CTL', 'IDE_redpcp': 'IDE_IDE'}
     data_dirs = [os.path.join(os.getenv('CSCRATCH'), 'archive',
                               this_case, 'lnd', 'hist')
                  for this_case in cases]
@@ -32,8 +32,8 @@ if __name__ == "__main__":
     tmpdir = tempfile.mkdtemp(prefix='monthly_mean_tmp',
                               dir=os.path.join(os.getenv('CSCRATCH')))
     print "placing monthly averages in {}".format(tmpdir)
-    m0, y0 = (12, 1)  # start month, start year
-    m1, y1 = (6, 4)  # end month, end year
+    m0, y0 = (11, 4)  # start month, start year
+    m1, y1 = (7, 8)  # end month, end year
 
     for this_run in clm_runs:
         out_files = []
