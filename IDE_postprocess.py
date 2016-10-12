@@ -110,29 +110,32 @@ if __name__ == "__main__":
     sp_info = IDE_locations.CLMf05g16_get_spatial_info()
     domain = sp_info[0]
     locs = sp_info[1:]
-    cal_locs = locs[0:7]
+    cal_locs = locs[0:6]
     data = Vividict()
     units = Vividict()
-    for this_loc in cal_locs:
-        sys.stdout.write('reading {}\n'.format(this_loc.name))
-        for this_run in runs:
-            sys.stdout.write('    {}: '.format(this_run))
-            for this_var in h2vars:
-                sys.stdout.write(' {} '.format(this_var))
+    for which_hist in [1, 2]:
+        vars = locals()['h{}vars'.format(which_hist)]
+        for this_loc in cal_locs:
+            sys.stdout.write('reading {}\n'.format(this_loc.name))
+            for this_run in runs:
+                sys.stdout.write('    {}: '.format(this_run))
+                for this_var in vars:
+                    sys.stdout.write(' {} '.format(this_var))
+                    sys.stdout.flush()
+                    mp = MonthlyParser(this_run,
+                                       data_dir,
+                                       'IDE_{}_h{}avg.nc'.format(this_run,
+                                                                 which_hist),
+                                       this_var)
+                    mp.parse(loc=this_loc)
+                    data[this_run][this_loc.name][this_var] = mp
+                    units[this_run][this_loc.name][this_var] = mp.vunits
+                sys.stdout.write('\n')
                 sys.stdout.flush()
-                mp = MonthlyParser(this_run,
-                                   data_dir,
-                                   'IDE_{}_h2avg.nc'.format(this_run),
-                                   this_var)
-                mp.parse(loc=this_loc)
-                data[this_run][this_loc.name][this_var] = mp
-                units[this_run][this_loc.name][this_var] = mp.vunits
-            sys.stdout.write('\n')
-            sys.stdout.flush()
 
     # plt.rcParams['figure.figsize']=(10,10)
     sys.stdout.write('plotting ')
-    for v in h2vars:
+    for v in (h1vars + h2vars):
         sys.stdout.write('{} '.format(v))
         sys.stdout.flush()
         df = pd.concat([data[r][loc.name][v].data
