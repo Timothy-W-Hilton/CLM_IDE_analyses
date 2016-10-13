@@ -2,11 +2,9 @@ import os
 import sys
 import netCDF4
 import numpy as np
-import itertools
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from spinup_diagnostics import CLM_spinup_analyzer as CSA
 import IDE_locations
 from datetime import datetime, timedelta
 
@@ -99,10 +97,11 @@ class MonthlyParser(object):
     def get_moy(self):
         return self.moy
 
+
 if __name__ == "__main__":
     data_dir = os.path.join(os.getenv('CSCRATCH'), 'monthly_means')
     runs = ['CTL', 'IDE']
-    #TODO: H2OSOI & other variables with soil depth dimension
+    # TODO: H2OSOI & other variables with soil depth dimension
     h1vars = ['FPSN', 'WT', 'EFLX_LH_TOT_R', 'FCTR', 'FGEV', 'FIRA', 'FSH',
             'FSH_V', 'H2OSNO', 'QBOT', 'QCHARGE', 'QDRAI',
             'QINFL', 'QVEGT', 'TBOT', 'ZWT']
@@ -110,7 +109,17 @@ if __name__ == "__main__":
     sp_info = IDE_locations.CLMf05g16_get_spatial_info()
     domain = sp_info[0]
     locs = sp_info[1:]
-    cal_locs = locs[0:6]
+
+    cal_wet_to_dry = ['McLaughlin NRS',
+                      'Sierra Foothill Research Extension Center',
+                      'Younger Lagoon',
+                      'Sedgewick NRS',
+                      'Loma Ridge Global Change Experiment',
+                      'Box Springs']
+    cal_locs = cal_wet_to_dry
+    for i, s in enumerate(cal_wet_to_dry):
+        cal_locs[i] = next((this for this in locs if this.name == s), None)
+
     data = Vividict()
     units = Vividict()
     for which_hist in [1, 2]:
@@ -145,7 +154,8 @@ if __name__ == "__main__":
         with sns.axes_style("white"):
             g = sns.factorplot(data=df, x='month', y='value',
                                col='loc', hue='case',
-                               kind='box', col_wrap=3)
+                               kind='point', col_wrap=3, legend=False,
+                               palette="Dark2")
             g.set_axis_labels(x_var='month',
                               y_var='{var} ({units})'.format(
                                   var=v,
