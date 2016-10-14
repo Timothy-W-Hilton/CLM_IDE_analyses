@@ -113,6 +113,17 @@ def format_factorgrid(g, clm_var, x_var_name):
                 horizontalalignment='center')
     return g
 
+
+def calc_dvar(df, varname):
+    """calculate mean monthly IDE-CTL difference in a variable
+    """
+    mean_var = all_vars[all_vars['var'] == varname][
+        ['value', 'case', 'loc', 'month']].groupby(
+            ['case', 'loc', 'month']).mean()
+    dvar = mean_var.ix['CTL'] - mean_var.ix['IDE']
+    return dvar
+
+
 if __name__ == "__main__":
     data_dir = os.path.join(os.getenv('CSCRATCH'), 'monthly_means')
     runs = ['CTL', 'IDE']
