@@ -137,6 +137,7 @@ if __name__ == "__main__":
 
     data = Vividict()
     units = Vividict()
+    df_list = Vividict()
     for which_hist in [1, 2]:
         vars = locals()['h{}vars'.format(which_hist)]
         for this_loc in cal_locs:
@@ -156,7 +157,6 @@ if __name__ == "__main__":
                     units[this_run][this_loc.name][this_var] = mp.vunits
                 sys.stdout.write('\n')
                 sys.stdout.flush()
-
     # plt.rcParams['figure.figsize']=(10,10)
     sys.stdout.write('plotting ')
     for v in (h1vars + h2vars):
@@ -166,6 +166,7 @@ if __name__ == "__main__":
                         for r in runs for loc in cal_locs])
         df['fyear'] = df['time'] / 365.0
         df['month'] = df.index.month
+        df_list[v] = df
         with sns.axes_style("white"):
             g = sns.factorplot(data=df, x='month', y='value',
                                col='loc', hue='case',
@@ -187,3 +188,5 @@ if __name__ == "__main__":
             plt.close(g.fig)
     sys.stdout.write('\n')
     sys.stdout.flush()
+    all_vars = pd.concat(df_list).reset_index(drop=True)
+    all_vars.to_csv('monthly_vals.txt')
