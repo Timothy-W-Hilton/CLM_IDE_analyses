@@ -98,6 +98,21 @@ class MonthlyParser(object):
         return self.moy
 
 
+def format_factorgrid(g, clm_var, x_var_name):
+    g.map(plt.plot, 'fyear', 'value')
+    g.set_axis_labels(x_var='year of simulation',
+                      y_var='{var} ({units})'.format(
+                          var=v,
+                          units=clm_var.vunits))
+    g.set_titles(template='{col_name}')
+    g.fig.get_axes()[0].legend(loc='best')
+    plt.figtext(0.5, 0.99,
+                '{shortname}: {longname}'.format(
+                    shortname=clm_var.varname,
+                    longname=clm_var.lname),
+                horizontalalignment='center')
+    return g
+
 if __name__ == "__main__":
     data_dir = os.path.join(os.getenv('CSCRATCH'), 'monthly_means')
     runs = ['CTL', 'IDE']
@@ -156,17 +171,7 @@ if __name__ == "__main__":
                                col='loc', hue='case',
                                kind='point', col_wrap=3, legend=False,
                                palette="Dark2")
-            g.set_axis_labels(x_var='month',
-                              y_var='{var} ({units})'.format(
-                                  var=v,
-                                  units=data[r][loc.name][v].vunits))
-            g.set_titles(template='{col_name}')
-            g.fig.get_axes()[0].legend(loc='best')
-            plt.figtext(0.5, 0.99,
-                        '{shortname}: {longname}'.format(
-                            shortname=v,
-                            longname=data[r][loc.name][v].lname),
-                        horizontalalignment='center')
+            format_factorgrid(g, data[r][loc.name][v], 'month')
             g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
                                    '{var}_bymonth.pdf'.format(var=v)))
             plt.close(g.fig)
@@ -176,18 +181,7 @@ if __name__ == "__main__":
                               size=3, aspect=1.5,
                               hue_kws={"marker": ["^", "v"],
                                        "linestyle": ['-', '-']})
-            g.map(plt.plot, 'fyear', 'value')
-            g.set_axis_labels(x_var='year of simulation',
-                              y_var='{var} ({units})'.format(
-                                  var=v,
-                                  units=data[r][loc.name][v].vunits))
-            g.set_titles(template='{col_name}')
-            g.fig.get_axes()[0].legend(loc='best')
-            plt.figtext(0.5, 0.99,
-                        '{shortname}: {longname}'.format(
-                            shortname=v,
-                            longname=data[r][loc.name][v].lname),
-                        horizontalalignment='center')
+            format_factorgrid(g, data[r][loc.name][v], 'year of simulation')
             g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
                                    '{var}_timeseries.pdf'.format(var=v)))
             plt.close(g.fig)
