@@ -1,5 +1,6 @@
 import os
 import sys
+import calendar
 import netCDF4
 import numpy as np
 import pandas as pd
@@ -114,14 +115,27 @@ def format_factorgrid(g, clm_var, x_var_name):
     return g
 
 
+def carbon_umol_m2_s_2_g_m2_yr(Cin, ndays):
+    """convert umol m-2 s-1 to g m-2 yr-1"""
+    C_mol_wt = 12.001
+    mol_per_umol = 1e-6
+    secs_per_day = 60 * 60 * 24
+    nsecs = ndays * secs_per_day
+    return (Cin * C_mol_wt * mol_per_umol * nsecs)
+
+
 def calc_dvar(df, varname):
     """calculate mean monthly IDE-CTL difference in a variable
     """
-    mean_var = all_vars[all_vars['var'] == varname][
+    mean_var = df[df['var'] == varname][
         ['value', 'case', 'loc', 'month']].groupby(
             ['case', 'loc', 'month']).mean()
     dvar = mean_var.ix['CTL'] - mean_var.ix['IDE']
-    return dvar
+    dvar['ndays'] = map(lambda x: calendar.monthrange(2001, x)[1],
+                        dvar.index.get_level_values('month'))
+    dvar['gC'] = carbon_umol_m2_s_2_g_m2_yr(dvar['value'], dvar['ndays'])
+    annual_total = dvar.groupby(level='loc').sum()
+    return dvar, annual_total
 
 
 if __name__ == "__main__":
