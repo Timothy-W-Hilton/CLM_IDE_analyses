@@ -99,6 +99,44 @@ class MonthlyParser(object):
         return self.moy
 
 
+def plot_CLM_variable(df, varname):
+    """plot monthly time series, monthly point/whisker plots
+
+    ARGS:
+    df (pandas.DataFrame): containing monthly variable values, units, variable
+       long name
+    varname (string): CLM variable name (i.e. the short, all-caps name)
+    """
+    with sns.axes_style("white"):
+        g = sns.factorplot(data=df, x='month', y='value',
+                           col='loc', hue='case',
+                           kind='point', col_wrap=3, legend=False,
+                           palette="Dark2")
+        format_factorgrid(g,
+                          df['var'].iloc[0],
+                          df['var_lname'].iloc[0],
+                          df['units'].iloc[0],
+                          'month')
+        g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
+                               '{var}_bymonth.pdf'.format(var=varname)))
+        plt.close(g.fig)
+    with sns.axes_style("white"):
+        g = sns.FacetGrid(df, hue='case', palette="Dark2",
+                          col='loc', col_wrap=3,
+                          size=3, aspect=1.5,
+                          hue_kws={"marker": ["^", "v"],
+                                   "linestyle": ['-', '-']})
+        g.map(plt.plot, 'fyear', 'value')
+        format_factorgrid(g,
+                          df['var'].iloc[0],
+                          df['var_lname'].iloc[0],
+                          df['units'].iloc[0],
+                          'year of simulation')
+        g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
+                               '{var}_timeseries.pdf'.format(var=varname)))
+        plt.close(g.fig)
+
+
 def format_factorgrid(g, var_sname, var_lname, var_units, x_var_name):
     g.set_axis_labels(x_var='year of simulation',
                       y_var='{var} ({units})'.format(
@@ -202,37 +240,10 @@ if __name__ == "__main__":
         all_vars = pd.read_csv('./monthly_vals.txt')
 
     sys.stdout.write('plotting ')
-    for v in (h1vars + h2vars):
+    for v in ('FPSN', ):
         sys.stdout.write('{} '.format(v))
         sys.stdout.flush()
         df = all_vars[all_vars['var'] == v]
-        with sns.axes_style("white"):
-            g = sns.factorplot(data=df, x='month', y='value',
-                               col='loc', hue='case',
-                               kind='point', col_wrap=3, legend=False,
-                               palette="Dark2")
-            format_factorgrid(g,
-                              df['var'].iloc[0],
-                              df['var_lname'].iloc[0],
-                              df['units'].iloc[0],
-                              'month')
-            g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
-                                   '{var}_bymonth.pdf'.format(var=v)))
-            plt.close(g.fig)
-        with sns.axes_style("white"):
-            g = sns.FacetGrid(df, hue='case', palette="Dark2",
-                              col='loc', col_wrap=3,
-                              size=3, aspect=1.5,
-                              hue_kws={"marker": ["^", "v"],
-                                       "linestyle": ['-', '-']})
-            g.map(plt.plot, 'fyear', 'value')
-            format_factorgrid(g,
-                              df['var'].iloc[0],
-                              df['var_lname'].iloc[0],
-                              df['units'].iloc[0],
-                              'year of simulation')
-            g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
-                                   '{var}_timeseries.pdf'.format(var=v)))
-            plt.close(g.fig)
+        plot_CLM_variable(df, v)
     sys.stdout.write('\n')
     sys.stdout.flush()
