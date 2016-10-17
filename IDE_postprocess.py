@@ -99,18 +99,17 @@ class MonthlyParser(object):
         return self.moy
 
 
-def format_factorgrid(g, clm_var, x_var_name):
-    g.map(plt.plot, 'fyear', 'value')
+def format_factorgrid(g, var_sname, var_lname, var_units, x_var_name):
     g.set_axis_labels(x_var='year of simulation',
                       y_var='{var} ({units})'.format(
-                          var=v,
-                          units=clm_var.vunits))
+                          var=var_sname,
+                          units=var_units))
     g.set_titles(template='{col_name}')
     g.fig.get_axes()[0].legend(loc='best')
     plt.figtext(0.5, 0.99,
                 '{shortname}: {longname}'.format(
-                    shortname=clm_var.varname,
-                    longname=clm_var.lname),
+                    shortname=var_sname,
+                    longname=var_lname),
                 horizontalalignment='center')
     return g
 
@@ -139,6 +138,7 @@ def calc_dvar(df, varname):
 
 
 if __name__ == "__main__":
+    calculate_data = False
     data_dir = os.path.join(os.getenv('CSCRATCH'), 'monthly_means')
     runs = ['CTL', 'IDE']
     # TODO: H2OSOI & other variables with soil depth dimension
@@ -160,44 +160,62 @@ if __name__ == "__main__":
     for i, s in enumerate(cal_wet_to_dry):
         cal_locs[i] = next((this for this in locs if this.name == s), None)
 
-    data = Vividict()
-    units = Vividict()
-    df_list = Vividict()
-    for which_hist in [1, 2]:
-        vars = locals()['h{}vars'.format(which_hist)]
-        for this_loc in cal_locs:
-            sys.stdout.write('reading {}\n'.format(this_loc.name))
-            for this_run in runs:
-                sys.stdout.write('    {}: '.format(this_run))
-                for this_var in vars:
-                    sys.stdout.write(' {} '.format(this_var))
+    if calculate_data:
+        data = Vividict()
+        units = Vividict()
+        df_list = Vividict()
+        for which_hist in [1, 2]:
+            vars = locals()['h{}vars'.format(which_hist)]
+            for this_loc in cal_locs:
+                sys.stdout.write('reading {}\n'.format(this_loc.name))
+                for this_run in runs:
+                    sys.stdout.write('    {}: '.format(this_run))
+                    for this_var in vars:
+                        sys.stdout.write(' {} '.format(this_var))
+                        sys.stdout.flush()
+                        mp = MonthlyParser(this_run,
+                                           data_dir,
+                                           'IDE_{}_h{}avg.nc'.format(
+                                               this_run, which_hist),
+                                           this_var)
+                        mp.parse(loc=this_loc)
+                        data[this_run][this_loc.name][this_var] = mp
+                        units[this_run][this_loc.name][this_var] = mp.vunits
+                    sys.stdout.write('\n')
                     sys.stdout.flush()
-                    mp = MonthlyParser(this_run,
-                                       data_dir,
-                                       'IDE_{}_h{}avg.nc'.format(this_run,
-                                                                 which_hist),
-                                       this_var)
-                    mp.parse(loc=this_loc)
-                    data[this_run][this_loc.name][this_var] = mp
-                    units[this_run][this_loc.name][this_var] = mp.vunits
-                sys.stdout.write('\n')
-                sys.stdout.flush()
-    # plt.rcParams['figure.figsize']=(10,10)
+        # plt.rcParams['figure.figsize']=(10,10)
+        for v in (h1vars + h2vars):
+            sys.stdout.write('{} '.format(v))
+            sys.stdout.flush()
+            df = pd.concat([data[r][loc.name][v].data
+                            for r in runs for loc in cal_locs])
+            df['fyear'] = df['time'] / 365.0
+            df['month'] = df.index.month
+            df['units'] = data[r][loc.name][v].vunits
+            df['var_lname'] = data[r][loc.name][v].lname
+            df_list[v] = df
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+        all_vars = pd.concat(df_list).reset_index(drop=True)
+        all_vars.to_csv('monthly_vals.txt')
+    else:
+        all_vars = pd.read_csv('./monthly_vals.txt')
+
     sys.stdout.write('plotting ')
     for v in (h1vars + h2vars):
         sys.stdout.write('{} '.format(v))
         sys.stdout.flush()
-        df = pd.concat([data[r][loc.name][v].data
-                        for r in runs for loc in cal_locs])
-        df['fyear'] = df['time'] / 365.0
-        df['month'] = df.index.month
-        df_list[v] = df
+        df = all_vars[all_vars['var'] == v]
         with sns.axes_style("white"):
             g = sns.factorplot(data=df, x='month', y='value',
                                col='loc', hue='case',
                                kind='point', col_wrap=3, legend=False,
                                palette="Dark2")
-            format_factorgrid(g, data[r][loc.name][v], 'month')
+            format_factorgrid(g,
+                              df['var'].iloc[0],
+                              df['var_lname'].iloc[0],
+                              df['units'].iloc[0],
+                              'month')
             g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
                                    '{var}_bymonth.pdf'.format(var=v)))
             plt.close(g.fig)
@@ -207,11 +225,14 @@ if __name__ == "__main__":
                               size=3, aspect=1.5,
                               hue_kws={"marker": ["^", "v"],
                                        "linestyle": ['-', '-']})
-            format_factorgrid(g, data[r][loc.name][v], 'year of simulation')
+            g.map(plt.plot, 'fyear', 'value')
+            format_factorgrid(g,
+                              df['var'].iloc[0],
+                              df['var_lname'].iloc[0],
+                              df['units'].iloc[0],
+                              'year of simulation')
             g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
                                    '{var}_timeseries.pdf'.format(var=v)))
             plt.close(g.fig)
     sys.stdout.write('\n')
     sys.stdout.flush()
-    all_vars = pd.concat(df_list).reset_index(drop=True)
-    all_vars.to_csv('monthly_vals.txt')
