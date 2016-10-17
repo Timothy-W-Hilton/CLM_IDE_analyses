@@ -99,7 +99,7 @@ class MonthlyParser(object):
         return self.moy
 
 
-def plot_CLM_variable(df, varname):
+def plot_CLM_variable(df, varname, ann_diff=None):
     """plot monthly time series, monthly point/whisker plots
 
     ARGS:
@@ -107,16 +107,20 @@ def plot_CLM_variable(df, varname):
        long name
     varname (string): CLM variable name (i.e. the short, all-caps name)
     """
+    sns.set_context("talk")
     with sns.axes_style("white"):
         g = sns.factorplot(data=df, x='month', y='value',
                            col='loc', hue='case',
-                           kind='point', col_wrap=3, legend=False,
-                           palette="Dark2")
+                           kind='point', col_wrap=3,
+                           legend=False, legend_out=False,
+                           palette="Dark2",
+                           markers=["o", "x"])
         format_factorgrid(g,
                           df['var'].iloc[0],
                           df['var_lname'].iloc[0],
                           df['units'].iloc[0],
-                          'month')
+                          'month',
+                          ann_diff)
         g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
                                '{var}_bymonth.pdf'.format(var=varname)))
         plt.close(g.fig)
@@ -124,31 +128,47 @@ def plot_CLM_variable(df, varname):
         g = sns.FacetGrid(df, hue='case', palette="Dark2",
                           col='loc', col_wrap=3,
                           size=3, aspect=1.5,
-                          hue_kws={"marker": ["^", "v"],
-                                   "linestyle": ['-', '-']})
+                          hue_kws={"marker": ["o", "x"],
+                                   "linestyle": ['-', '-']},
+                          legend_out=False)
         g.map(plt.plot, 'fyear', 'value')
-        format_factorgrid(g,
-                          df['var'].iloc[0],
-                          df['var_lname'].iloc[0],
-                          df['units'].iloc[0],
-                          'year of simulation')
+        g = format_factorgrid(g,
+                              df['var'].iloc[0],
+                              df['var_lname'].iloc[0],
+                              df['units'].iloc[0],
+                              'year of simulation')
         g.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
                                '{var}_timeseries.pdf'.format(var=varname)))
         plt.close(g.fig)
 
 
-def format_factorgrid(g, var_sname, var_lname, var_units, x_var_name):
-    g.set_axis_labels(x_var='year of simulation',
+def format_factorgrid(g, var_sname, var_lname, var_units, x_var_name,
+                      ann_diff=None):
+    plt.rc('text', usetex=True)
+    fpsn_units_raw = "umol/m2s"
+    fpsn_units = "$\mu$mol m$^{{-2}}$ yr$^{{-1}}$"
+    g.set_axis_labels(x_var=x_var_name,
                       y_var='{var} ({units})'.format(
                           var=var_sname,
-                          units=var_units))
+                          units=var_units.replace(fpsn_units_raw, fpsn_units)))
     g.set_titles(template='{col_name}')
-    g.fig.get_axes()[0].legend(loc='best')
+    new_labels = {'IDE': 'drought', 'CTL': 'control'}
+    for k in g._legend_data.keys():
+        g._legend_data[new_labels[k]] = g._legend_data.pop(k)
+    g.add_legend()
     plt.figtext(0.5, 0.99,
                 '{shortname}: {longname}'.format(
                     shortname=var_sname,
                     longname=var_lname),
                 horizontalalignment='center')
+    if ann_diff is not None:
+        for this_site, this_ax in zip(ann_diff.index, g.axes):
+            this_ax.annotate(s=(r'control - drought: {:0.0f} '
+                                'gC m$^{{-2}}$ yr$^{{-1}}$').format(
+                ann_diff.ix[this_site].gC),
+                             xy=(0.5, 0.01),
+                             xycoords="axes fraction",
+                             ha='center')
     return g
 
 
@@ -244,6 +264,8 @@ if __name__ == "__main__":
         sys.stdout.write('{} '.format(v))
         sys.stdout.flush()
         df = all_vars[all_vars['var'] == v]
-        plot_CLM_variable(df, v)
+        mon_diff, ann_diff = calc_dvar(all_vars, v)
+        ann_diff = ann_diff.reindex([x.name for x in cal_locs])
+        plot_CLM_variable(df, v, ann_diff)
     sys.stdout.write('\n')
     sys.stdout.flush()
