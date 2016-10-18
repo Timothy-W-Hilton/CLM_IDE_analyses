@@ -163,9 +163,12 @@ def format_factorgrid(g, var_sname, var_lname, var_units, x_var_name,
                 horizontalalignment='center')
     if ann_diff is not None:
         for this_site, this_ax in zip(ann_diff.index, g.axes):
-            this_ax.annotate(s=(r'control - drought: {:0.0f} '
-                                'gC m$^{{-2}}$ yr$^{{-1}}$').format(
-                ann_diff.ix[this_site].gC),
+            this_ax.annotate(s=(r'$\Delta${v}: {gC:0.0f} '
+                                'gC m$^{{-2}}$ yr$^{{-1}}$'
+                                ' ({pct:0.0f}\%)').format(
+                                    v=var_sname,
+                                    gC=ann_diff.ix[this_site].d_gC,
+                                    pct=ann_diff.ix[this_site].pct),
                              xy=(0.5, 0.01),
                              xycoords="axes fraction",
                              ha='center')
@@ -187,11 +190,20 @@ def calc_dvar(df, varname):
     mean_var = df[df['var'] == varname][
         ['value', 'case', 'loc', 'month']].groupby(
             ['case', 'loc', 'month']).mean()
-    dvar = mean_var.ix['CTL'] - mean_var.ix['IDE']
+    ide = mean_var.ix['IDE']
+    ctl = mean_var.ix['CTL']
+    dvar = ide.join(ctl, lsuffix='IDE', rsuffix='CTL')
+    dvar['d'] = dvar['valueCTL'] - dvar['valueIDE']
     dvar['ndays'] = map(lambda x: calendar.monthrange(2001, x)[1],
                         dvar.index.get_level_values('month'))
-    dvar['gC'] = carbon_umol_m2_s_2_g_m2_yr(dvar['value'], dvar['ndays'])
+    dvar['gC_IDE'] = carbon_umol_m2_s_2_g_m2_yr(dvar['valueIDE'],
+                                                dvar['ndays'])
+    dvar['gC_CTL'] = carbon_umol_m2_s_2_g_m2_yr(dvar['valueCTL'],
+                                                dvar['ndays'])
+    dvar['d_gC'] = dvar['gC_CTL'] - dvar['gC_IDE']
     annual_total = dvar.groupby(level='loc').sum()
+    annual_total.eval('pct = (-100 * (gC_CTL - gC_IDE) / gC_CTL)',
+                      inplace=True)
     return dvar, annual_total
 
 
