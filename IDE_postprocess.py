@@ -99,6 +99,45 @@ class MonthlyParser(object):
         return self.moy
 
 
+def plot_site_annual_rain_gpp(site_name, all_vars):
+    """plot annual rain vs annual GPP for a site
+    """
+    SECS_PER_DAY = 24 * 60 * 60
+    site_data = all_vars[(all_vars['loc'] == site_name) &
+                         all_vars['var'].isin(['RAIN', 'FPSN'])].copy()
+    site_data['year'] = np.floor(site_data['fyear']).astype('int')
+    site_data = site_data.ix[site_data['year'] < 7]
+    site_data.loc[:, 'ndays'] = map(lambda x: calendar.monthrange(2001, x)[1],
+                                    site_data['month'])
+    site_data.loc[:, 'ann_val'] = np.nan
+    rain_idx = site_data['var'] == 'RAIN'
+    site_data.loc[rain_idx, 'tot'] = (site_data.loc[rain_idx, 'value'] *
+                                      site_data.loc[rain_idx, 'ndays'] *
+                                      SECS_PER_DAY)
+    fpsn_idx = site_data['var'] == 'FPSN'
+    site_data.loc[fpsn_idx, 'tot'] = carbon_umol_m2_s_2_g_m2_yr(
+        site_data.loc[fpsn_idx, 'value'],
+        site_data.loc[fpsn_idx, 'ndays'])
+    grp = site_data.groupby(['year', 'var', 'case']).sum()
+    totals = grp['tot'].reset_index()
+
+    g = dict(list(totals.groupby('var')))
+    anntot = pd.merge(g['FPSN'], g['RAIN'], on=['year', 'case'],
+                      suffixes=g.keys())
+    anntot.loc[anntot['case'] == 'IDE', 'case'] = "drought"
+    anntot.loc[anntot['case'] == 'CTL', 'case'] = "control"
+    with sns.axes_style("white"):
+        g = sns.FacetGrid(anntot, hue='case', margin_titles=True, size=6,
+                          hue_kws={"marker": ["^", "v"]})
+    g.map(plt.scatter, 'totRAIN', 'totFPSN')
+    g.set_axis_labels(y_var=r'annual FPSN (g C m$^{{-2}}$ yr$^{{-1}}$)',
+                      x_var='annual rain (mm)')
+    g.add_legend()
+    return site_data, totals
+
+
+
+
 def plot_CLM_variable(df, varname, ann_diff=None):
     """plot monthly time series, monthly point/whisker plots
 
@@ -272,12 +311,30 @@ if __name__ == "__main__":
         all_vars = pd.read_csv('./monthly_vals.txt')
 
     sys.stdout.write('plotting ')
-    for v in ('FPSN', ):
-        sys.stdout.write('{} '.format(v))
-        sys.stdout.flush()
-        df = all_vars[all_vars['var'] == v]
-        mon_diff, ann_diff = calc_dvar(all_vars, v)
-        ann_diff = ann_diff.reindex([x.name for x in cal_locs])
-        plot_CLM_variable(df, v, ann_diff)
-    sys.stdout.write('\n')
-    sys.stdout.flush()
+    # for v in ('FPSN', ):
+    #     sys.stdout.write('{} '.format(v))
+    #     sys.stdout.flush()
+    #     df = all_vars[all_vars['var'] == v]
+    #     mon_diff, ann_diff = calc_dvar(all_vars, v)
+    #     ann_diff = ann_diff.reindex([x.name for x in cal_locs])
+    #     plot_CLM_variable(df, v, ann_diff)
+    # sys.stdout.write('\n')
+    # sys.stdout.flush()
+
+    site_data, anntot_long = plot_site_annual_rain_gpp(
+        "Loma Ridge Global Change Experiment", all_vars)
+
+
+
+    # fpsn = all_vars.ix[all_vars['var'] == 'FPSN']
+    # ndays = map(lambda x: calendar.monthrange(2001, x)[1],
+    #             fpsn['month'].values)
+    # fpsn.loc[:, 'gC'] = np.vectorize(carbon_umol_m2_s_2_g_m2_yr)(fpsn['value'],
+    #                                                              ndays)
+    # bar = fpsn.join(fpsn.loc[:, ('gC', 'fyear')].cumsum(), rsuffix='sum')
+    # g = sns.factorplot(data=bar, x='fyear', y='gCsum',
+    #                    col='loc', hue='case',
+    #                    kind='point', col_wrap=3,
+    #                    legend=False, legend_out=False,
+    #                    palette="Dark2",
+    #                    markers=["o", "x"])
