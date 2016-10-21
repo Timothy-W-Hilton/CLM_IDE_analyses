@@ -99,43 +99,44 @@ class MonthlyParser(object):
         return self.moy
 
 
-def plot_site_annual_rain_gpp(site_name, all_vars):
+def plot_site_annual_rain_gpp(all_vars):
     """plot annual rain vs annual GPP for a site
     """
     SECS_PER_DAY = 24 * 60 * 60
-    site_data = all_vars[(all_vars['loc'] == site_name) &
-                         all_vars['var'].isin(['RAIN', 'FPSN'])].copy()
+    site_data = all_vars[all_vars['var'].isin(['RAIN', 'FPSN'])].copy()
     site_data['year'] = np.floor(site_data['fyear']).astype('int')
     site_data = site_data.ix[site_data['year'] < 7]
     site_data.loc[:, 'ndays'] = map(lambda x: calendar.monthrange(2001, x)[1],
                                     site_data['month'])
-    site_data.loc[:, 'ann_val'] = np.nan
     rain_idx = site_data['var'] == 'RAIN'
-    site_data.loc[rain_idx, 'tot'] = (site_data.loc[rain_idx, 'value'] *
+    site_data.loc[rain_idx, 'annual_'] = (site_data.loc[rain_idx, 'value'] *
                                       site_data.loc[rain_idx, 'ndays'] *
                                       SECS_PER_DAY)
     fpsn_idx = site_data['var'] == 'FPSN'
-    site_data.loc[fpsn_idx, 'tot'] = carbon_umol_m2_s_2_g_m2_yr(
+    site_data.loc[fpsn_idx, 'annual_'] = carbon_umol_m2_s_2_g_m2_yr(
         site_data.loc[fpsn_idx, 'value'],
         site_data.loc[fpsn_idx, 'ndays'])
-    grp = site_data.groupby(['year', 'var', 'case']).sum()
-    totals = grp['tot'].reset_index()
+    grp = site_data.groupby(['year', 'loc', 'var', 'case']).sum()
+    totals = grp['annual_'].reset_index()
 
     g = dict(list(totals.groupby('var')))
-    anntot = pd.merge(g['FPSN'], g['RAIN'], on=['year', 'case'],
+    anntot = pd.merge(g['FPSN'], g['RAIN'], on=['year', 'case', 'loc'],
                       suffixes=g.keys())
     anntot.loc[anntot['case'] == 'IDE', 'case'] = "drought"
     anntot.loc[anntot['case'] == 'CTL', 'case'] = "control"
+    anntot.drop(['varFPSN', 'varRAIN'], axis=1, inplace=True)
+    anntot = anntot.rename(columns={'locRAIN': 'loc'})
+    sns.set_context("talk")
     with sns.axes_style("white"):
-        g = sns.FacetGrid(anntot, hue='case', margin_titles=True, size=6,
+        g = sns.FacetGrid(anntot, col='loc', hue='case',
+                          col_wrap=3,
+                          margin_titles=True, size=6,
                           hue_kws={"marker": ["^", "v"]})
-    g.map(plt.scatter, 'totRAIN', 'totFPSN')
+    g.map(plt.scatter, 'annual_RAIN', 'annual_FPSN')
     g.set_axis_labels(y_var=r'annual FPSN (g C m$^{{-2}}$ yr$^{{-1}}$)',
                       x_var='annual rain (mm)')
     g.add_legend()
     return site_data, totals
-
-
 
 
 def plot_CLM_variable(df, varname, ann_diff=None):
@@ -321,8 +322,7 @@ if __name__ == "__main__":
     # sys.stdout.write('\n')
     # sys.stdout.flush()
 
-    site_data, anntot_long = plot_site_annual_rain_gpp(
-        "Loma Ridge Global Change Experiment", all_vars)
+    site_data, anntot_long = plot_site_annual_rain_gpp(all_vars)
 
 
 
