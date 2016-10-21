@@ -132,10 +132,14 @@ def plot_site_annual_rain_gpp(all_vars):
                           col_wrap=3,
                           margin_titles=True, size=6,
                           hue_kws={"marker": ["^", "v"]})
-    g.map(plt.scatter, 'annual_RAIN', 'annual_FPSN')
+    g.map(plt.scatter, 'annual_RAIN', 'annual_FPSN', s=100)
+    g.set_titles(template='{col_name}')
     g.set_axis_labels(y_var=r'annual FPSN (g C m$^{{-2}}$ yr$^{{-1}}$)',
                       x_var='annual rain (mm)')
     g.add_legend()
+    plt.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
+                             './rain_vs_pcp.pdf'))
+    plt.close()
     return site_data, totals
 
 
@@ -172,6 +176,7 @@ def plot_CLM_variable(df, varname, ann_diff=None):
                                    "linestyle": ['-', '-']},
                           legend_out=False)
         g.map(plt.plot, 'fyear', 'value')
+        g.set_titles(template='{col_name}')
         g = format_factorgrid(g,
                               df['var'].iloc[0],
                               df['var_lname'].iloc[0],
