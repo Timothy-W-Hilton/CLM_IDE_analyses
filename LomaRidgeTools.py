@@ -15,6 +15,12 @@ import pandas as pd
 # "7",01/01/00,0.0843514393474829,0.116431372126997,-0.123912339060836,392.630940457913    # open shrub
 # "8",01/01/00,0.0444654685554087,5.27772064287825e-18,0.480374197167335,3512.23663286330
 
+days_per_year = 365.0
+C_g_per_mol = 12.01
+mol_per_umol = 1e-6
+s_per_30mins = 30 * 60
+
+
 def K_to_C(K):
     """convert Kelvins to degrees Centrigrade
     """
@@ -66,10 +72,6 @@ class LomaRidgeData(object):
         t: convert days since 1 Jan 2006 to
            year number (0 for 2006, 1 for 2007...)
         """
-        days_per_year = 365.0
-        C_g_per_mol = 12.01
-        mol_per_umol = 1e-6
-        s_per_30mins = 30 * 60
         self.data['year'] = (np.floor(self.data['TIME'] /
                                       days_per_year)).astype(int)
         self.data['NEE_gC'] = (self.data['CO2_FLUX'] * C_g_per_mol *
@@ -81,7 +83,9 @@ class LomaRidgeData(object):
     def get_GPP(self, params, suffix=''):
         RE_name = 'RE_gC{}'.format(suffix)
         GPP_name = 'GPP_gC{}'.format(suffix)
-        self.data[RE_name] = self.VPRM_RE(params.alpha, params.beta)
+        RE_umol = self.VPRM_RE(params.alpha, params.beta)
+        self.data[RE_name] = (RE_umol * C_g_per_mol *
+                              mol_per_umol * s_per_30mins)
         self.data[GPP_name] = (self.data[RE_name] - self.data['NEE_gC'])
 
     def calc_annual_totals(self):
