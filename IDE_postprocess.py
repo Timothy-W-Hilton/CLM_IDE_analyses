@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import IDE_locations
 from datetime import datetime, timedelta
 
+import LomaRidgeTools
+
 
 def month_from_t0_offset(ndays, t0):
     return (timedelta(days=float(ndays)) + t0)
@@ -133,6 +135,11 @@ def plot_site_annual_rain_gpp(all_vars):
                       'Sedgewick NRS',
                       'Loma Ridge Global Change Experiment',
                       'Box Springs']
+
+    lomaridge_gpp = LomaRidgeTools.annual_total_main(
+        os.path.join('/', 'project', 'projectdirs', 'm2319', 'Data',
+                     'LomaRidgeGlobalChangeExperiment', 'Grass_v3_4.mat'))
+
     sns.set_context("talk")
     with sns.axes_style("white"):
         g = sns.FacetGrid(anntot, col='loc', hue='case',
@@ -145,6 +152,12 @@ def plot_site_annual_rain_gpp(all_vars):
     g.set_axis_labels(y_var=r'annual FPSN (g C m$^{{-2}}$ yr$^{{-1}}$)',
                       x_var='annual rain (mm)')
     g.add_legend()
+    loma_idx = ["Loma" in x for x in cal_wet_to_dry].index(True)
+    g.axes[loma_idx].scatter(lomaridge_gpp['RAIN'],
+                             lomaridge_gpp['GPP_gC_GRASS'],
+                             marker='x', s=80,
+                             label='VPRM RE - obs NEE')
+    g.axes[loma_idx].legend()
     plt.savefig(os.path.join(os.getenv('CSCRATCH'), 'plots',
                              './rain_vs_pcp.pdf'))
     plt.close()
