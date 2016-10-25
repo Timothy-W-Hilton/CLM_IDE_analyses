@@ -126,10 +126,18 @@ def plot_site_annual_rain_gpp(all_vars):
     anntot.loc[anntot['case'] == 'CTL', 'case'] = "control"
     anntot.drop(['varFPSN', 'varRAIN'], axis=1, inplace=True)
     anntot = anntot.rename(columns={'locRAIN': 'loc'})
+    # reorder from wet to dry
+    cal_wet_to_dry = ['McLaughlin NRS',
+                      'Sierra Foothill Research Extension Center',
+                      'Younger Lagoon',
+                      'Sedgewick NRS',
+                      'Loma Ridge Global Change Experiment',
+                      'Box Springs']
     sns.set_context("talk")
     with sns.axes_style("white"):
         g = sns.FacetGrid(anntot, col='loc', hue='case',
                           col_wrap=3,
+                          col_order=cal_wet_to_dry,
                           margin_titles=True, size=6,
                           hue_kws={"marker": ["^", "v"]})
     g.map(plt.scatter, 'annual_RAIN', 'annual_FPSN', s=100)
