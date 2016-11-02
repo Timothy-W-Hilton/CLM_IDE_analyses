@@ -101,13 +101,13 @@ class MonthlyParser(object):
         return self.moy
 
 
-def plot_site_annual_rain_gpp(all_vars):
+def plot_site_annual_rain_gpp(all_vars, locs):
     """plot annual rain vs annual GPP for a site
     """
     SECS_PER_DAY = 24 * 60 * 60
     site_data = all_vars[all_vars['var'].isin(['RAIN', 'FPSN'])].copy()
     site_data['year'] = np.floor(site_data['fyear']).astype('int')
-    site_data = site_data.ix[site_data['year'] < 7]
+    # site_data = site_data.ix[site_data['year'] < 7]
     site_data.loc[:, 'ndays'] = map(lambda x: calendar.monthrange(2001, x)[1],
                                     site_data['month'])
     rain_idx = site_data['var'] == 'RAIN'
@@ -129,13 +129,6 @@ def plot_site_annual_rain_gpp(all_vars):
     anntot.drop(['varFPSN', 'varRAIN'], axis=1, inplace=True)
     anntot = anntot.rename(columns={'locRAIN': 'loc'})
     # reorder from wet to dry
-    cal_wet_to_dry = ['McLaughlin NRS',
-                      'Sierra Foothill Research Extension Center',
-                      'Younger Lagoon',
-                      'Sedgewick NRS',
-                      'Loma Ridge Global Change Experiment',
-                      'Box Springs']
-
     lomaridge_gpp = LomaRidgeTools.annual_total_main(
         os.path.join('/', 'project', 'projectdirs', 'm2319', 'Data',
                      'LomaRidgeGlobalChangeExperiment', 'Grass_v3_4.mat'))
@@ -143,8 +136,8 @@ def plot_site_annual_rain_gpp(all_vars):
     sns.set_context("talk")
     with sns.axes_style("white"):
         g = sns.FacetGrid(anntot, col='loc', hue='case',
-                          col_wrap=3,
-                          col_order=cal_wet_to_dry,
+                          col_wrap=4,
+                          col_order=locs,
                           margin_titles=True, size=6,
                           hue_kws={"marker": ["^", "v"]})
     g.map(plt.scatter, 'annual_RAIN', 'annual_FPSN', s=100)
@@ -152,7 +145,7 @@ def plot_site_annual_rain_gpp(all_vars):
     g.set_axis_labels(y_var=r'annual FPSN (g C m$^{{-2}}$ yr$^{{-1}}$)',
                       x_var='annual rain (mm)')
     g.add_legend()
-    loma_idx = ["Loma" in x for x in cal_wet_to_dry].index(True)
+    loma_idx = ["Loma" in x for x in locs].index(True)
     g.axes[loma_idx].scatter(lomaridge_gpp['RAIN'],
                              lomaridge_gpp['GPP_gC_GRASS'],
                              marker='x', s=80,
@@ -269,7 +262,7 @@ def calc_dvar(df, varname):
     dvar['d_gC'] = dvar['gC_CTL'] - dvar['gC_IDE']
     annual_total = dvar.groupby(level='loc').sum()
     annual_total.eval('pct = (-100 * (gC_CTL - gC_IDE) / gC_CTL)',
-                      inplace=True)
+                      inplace=e)
     return dvar, annual_total
 
 
@@ -286,7 +279,8 @@ if __name__ == "__main__":
     domain = sp_info[0]
     locs = sp_info[1:]
 
-    cal_wet_to_dry = ['McLaughlin NRS',
+    cal_wet_to_dry = ['Mammoth Lakes',
+                      'McLaughlin NRS',
                       'Sierra Foothill Research Extension Center',
                       'Younger Lagoon',
                       'Sedgewick NRS',
@@ -348,9 +342,8 @@ if __name__ == "__main__":
     # sys.stdout.write('\n')
     # sys.stdout.flush()
 
-    site_data, anntot_long = plot_site_annual_rain_gpp(all_vars)
-
-
+    site_data, anntot_long = plot_site_annual_rain_gpp(
+        all_vars, [s.name for s in cal_wet_to_dry])
 
     # fpsn = all_vars.ix[all_vars['var'] == 'FPSN']
     # ndays = map(lambda x: calendar.monthrange(2001, x)[1],

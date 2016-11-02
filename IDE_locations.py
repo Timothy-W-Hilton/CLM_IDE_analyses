@@ -32,6 +32,9 @@ def CLMf05g16_get_spatial_info():
     # (http://www.ucnrs.org/reserves/box-springs-reserve.html)
     boxsprings = Location((-117.303321, ), (33.98472, ), 'Box Springs')
     boxsprings.get_clm_xy(domain_f05_g16)
+    #http://www.findlatitudeandlongitude.com/?loc=+mammoth+lakes%2C+california#.WBN35neZMo9
+    mammoth_lakes = Location((-118.972079, ), (37.648546, ), 'Mammoth Lakes')
+    mammoth_lakes.get_clm_xy(domain_f05_g16)
     # coordinates from http://atmos.seas.harvard.edu/lab/hf/hfsite.html
     harvard = Location((-72.171478, ), (42.537755, ), 'Harvard Forest')
     harvard.get_clm_xy(domain_f05_g16)
@@ -40,4 +43,4 @@ def CLMf05g16_get_spatial_info():
     wlef.get_clm_xy(domain_f05_g16)
     return (domain_f05_g16, santacruz, mclaughlin,
             sierra_foothills, loma_ridge, sedgewick, boxsprings, ARM_SGP,
-            harvard, wlef)
+            harvard, wlef, mammoth_lakes)
