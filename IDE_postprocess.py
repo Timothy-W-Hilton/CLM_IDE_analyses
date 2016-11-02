@@ -203,7 +203,6 @@ def plot_CLM_variable(df, varname, ann_diff=None):
 
 def format_factorgrid(g, var_sname, var_lname, var_units, x_var_name,
                       ann_diff=None):
-    plt.rc('text', usetex=True)
     fpsn_units_raw = "umol/m2s"
     fpsn_units = "$\mu$mol m$^{{-2}}$ yr$^{{-1}}$"
     g.set_axis_labels(x_var=x_var_name,
@@ -262,7 +261,7 @@ def calc_dvar(df, varname):
     dvar['d_gC'] = dvar['gC_CTL'] - dvar['gC_IDE']
     annual_total = dvar.groupby(level='loc').sum()
     annual_total.eval('pct = (-100 * (gC_CTL - gC_IDE) / gC_CTL)',
-                      inplace=e)
+                      inplace=True)
     return dvar, annual_total
 
 
@@ -332,15 +331,15 @@ if __name__ == "__main__":
         all_vars = pd.read_csv('./monthly_vals.txt')
 
     sys.stdout.write('plotting ')
-    # for v in ('FPSN', ):
-    #     sys.stdout.write('{} '.format(v))
-    #     sys.stdout.flush()
-    #     df = all_vars[all_vars['var'] == v]
-    #     mon_diff, ann_diff = calc_dvar(all_vars, v)
-    #     ann_diff = ann_diff.reindex([x.name for x in cal_locs])
-    #     plot_CLM_variable(df, v, ann_diff)
-    # sys.stdout.write('\n')
-    # sys.stdout.flush()
+    for v in (h1vars + h2vars):  # ('FPSN', ):
+        sys.stdout.write('{} '.format(v))
+        sys.stdout.flush()
+        df = all_vars[all_vars['var'] == v]
+        mon_diff, ann_diff = calc_dvar(all_vars, v)
+        ann_diff = ann_diff.reindex([x.name for x in cal_locs])
+        plot_CLM_variable(df, v, ann_diff)
+    sys.stdout.write('\n')
+    sys.stdout.flush()
 
     site_data, anntot_long = plot_site_annual_rain_gpp(
         all_vars, [s.name for s in cal_wet_to_dry])
