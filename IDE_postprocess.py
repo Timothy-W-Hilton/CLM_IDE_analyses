@@ -136,7 +136,7 @@ def plot_site_annual_rain_gpp(all_vars, locs):
     sns.set_context("talk")
     with sns.axes_style("white"):
         g = sns.FacetGrid(anntot, col='loc', hue='case',
-                          col_wrap=4,
+                          col_wrap=3,
                           col_order=locs,
                           margin_titles=True, size=6,
                           hue_kws={"marker": ["^", "v"]})
@@ -278,8 +278,14 @@ if __name__ == "__main__":
     domain = sp_info[0]
     locs = sp_info[1:]
 
-    cal_wet_to_dry = ['Mammoth Lakes',
-                      'McLaughlin NRS',
+    # cal_wet_to_dry = ['Mammoth Lakes',
+    #                   'McLaughlin NRS',
+    #                   'Sierra Foothill Research Extension Center',
+    #                   'Younger Lagoon',
+    #                   'Sedgewick NRS',
+    #                   'Loma Ridge Global Change Experiment',
+    #                   'Box Springs']
+    cal_wet_to_dry = ['McLaughlin NRS',
                       'Sierra Foothill Research Extension Center',
                       'Younger Lagoon',
                       'Sedgewick NRS',
@@ -330,6 +336,7 @@ if __name__ == "__main__":
     else:
         all_vars = pd.read_csv('./monthly_vals.txt')
 
+    all_vars = all_vars.loc[all_vars['loc'] != "Mammoth Lakes", :].copy()
     sys.stdout.write('plotting ')
     for v in (h1vars + h2vars):  # ('FPSN', ):
         sys.stdout.write('{} '.format(v))
@@ -337,6 +344,8 @@ if __name__ == "__main__":
         df = all_vars[all_vars['var'] == v]
         mon_diff, ann_diff = calc_dvar(all_vars, v)
         ann_diff = ann_diff.reindex([x.name for x in cal_locs])
+        if v != "FPSN":
+            ann_diff = None
         plot_CLM_variable(df, v, ann_diff)
     sys.stdout.write('\n')
     sys.stdout.flush()
