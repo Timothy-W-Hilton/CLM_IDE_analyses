@@ -157,7 +157,7 @@ def plot_site_annual_rain_gpp(all_vars, locs):
     return site_data, totals
 
 
-def plot_CLM_variable(df, varname, ann_diff=None):
+def plot_CLM_variable(df, varname, ann_diff=None, locs=None):
     """plot monthly time series, monthly point/whisker plots
 
     ARGS:
@@ -171,6 +171,7 @@ def plot_CLM_variable(df, varname, ann_diff=None):
                            col='loc', hue='case',
                            kind='point', col_wrap=3,
                            legend=False, legend_out=False,
+                           col_order=locs,
                            palette="Dark2",
                            markers=["o", "x"])
         format_factorgrid(g,
@@ -188,6 +189,7 @@ def plot_CLM_variable(df, varname, ann_diff=None):
                           size=3, aspect=1.5,
                           hue_kws={"marker": ["o", "x"],
                                    "linestyle": ['-', '-']},
+                          col_order=locs,
                           legend_out=False)
         g.map(plt.plot, 'fyear', 'value')
         g.set_titles(template='{col_name}')
@@ -278,19 +280,19 @@ if __name__ == "__main__":
     domain = sp_info[0]
     locs = sp_info[1:]
 
-    # cal_wet_to_dry = ['Mammoth Lakes',
-    #                   'McLaughlin NRS',
-    #                   'Sierra Foothill Research Extension Center',
-    #                   'Younger Lagoon',
-    #                   'Sedgewick NRS',
-    #                   'Loma Ridge Global Change Experiment',
-    #                   'Box Springs']
     cal_wet_to_dry = ['McLaughlin NRS',
                       'Sierra Foothill Research Extension Center',
                       'Younger Lagoon',
                       'Sedgewick NRS',
                       'Loma Ridge Global Change Experiment',
-                      'Box Springs']
+                      'Box Springs',
+                      'Mammoth Lakes']
+    # cal_wet_to_dry = ['McLaughlin NRS',
+    #                   'Sierra Foothill Research Extension Center',
+    #                   'Younger Lagoon',
+    #                   'Sedgewick NRS',
+    #                   'Loma Ridge Global Change Experiment',
+    #                   'Box Springs']
     cal_locs = cal_wet_to_dry
     for i, s in enumerate(cal_wet_to_dry):
         cal_locs[i] = next((this for this in locs if this.name == s), None)
@@ -336,7 +338,7 @@ if __name__ == "__main__":
     else:
         all_vars = pd.read_csv('./monthly_vals.txt')
 
-    all_vars = all_vars.loc[all_vars['loc'] != "Mammoth Lakes", :].copy()
+    # all_vars = all_vars.loc[all_vars['loc'] != "Mammoth Lakes", :].copy()
     sys.stdout.write('plotting ')
     for v in (h1vars + h2vars):  # ('FPSN', ):
         sys.stdout.write('{} '.format(v))
@@ -346,7 +348,8 @@ if __name__ == "__main__":
         ann_diff = ann_diff.reindex([x.name for x in cal_locs])
         if v != "FPSN":
             ann_diff = None
-        plot_CLM_variable(df, v, ann_diff)
+        plot_CLM_variable(df, v, ann_diff,
+                          [s.name for s in cal_wet_to_dry])
     sys.stdout.write('\n')
     sys.stdout.flush()
 

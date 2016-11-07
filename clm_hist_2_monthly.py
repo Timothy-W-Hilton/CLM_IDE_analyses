@@ -32,8 +32,8 @@ if __name__ == "__main__":
     tmpdir = tempfile.mkdtemp(prefix='monthly_mean_tmp',
                               dir=os.path.join(os.getenv('CSCRATCH')))
     print "placing monthly averages in {}".format(tmpdir)
-    m0, y0 = (11, 4)  # start month, start year
-    m1, y1 = (7, 8)  # end month, end year
+    m0, y0 = (11, 15)  # start month, start year
+    m1, y1 = (1, 16)  # end month, end year
 
     for this_run in clm_runs:
         out_files = []
