@@ -206,7 +206,7 @@ def plot_CLM_variable(df, varname, ann_diff=None, locs=None):
 def format_factorgrid(g, var_sname, var_lname, var_units, x_var_name,
                       ann_diff=None):
     fpsn_units_raw = "umol/m2s"
-    fpsn_units = "$\mu$mol m$^{{-2}}$ yr$^{{-1}}$"
+    fpsn_units = "$\mu$mol m$^{{-2}}$ s$^{{-1}}$"
     g.set_axis_labels(x_var=x_var_name,
                       y_var='{var} ({units})'.format(
                           var=var_sname,
