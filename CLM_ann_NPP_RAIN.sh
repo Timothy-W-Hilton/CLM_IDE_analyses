@@ -36,5 +36,5 @@ ncap2 -A -s "time={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}" -v $OUTFILE $OUTFILE
 ncatted -h -a units,NPPide,o,c,'gC m-2 yr-1' $OUTFILE
 ncatted -h -a units,NPPctl,o,c,'gC m-2 yr-1' $OUTFILE
 ncatted -h -a units,RAINide,o,c,'mm yr-1' $OUTFILE
-ncatted -h -a units,RAINide,o,c,'mm yr-1' $OUTFILE
+ncatted -h -a units,RAINctl,o,c,'mm yr-1' $OUTFILE
 ncatted -h -a units,time,o,c,'year of simulation' $OUTFILE
