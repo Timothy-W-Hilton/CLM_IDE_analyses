@@ -37,4 +37,6 @@ ncatted -h -a units,NPPide,o,c,'gC m-2 yr-1' $OUTFILE
 ncatted -h -a units,NPPctl,o,c,'gC m-2 yr-1' $OUTFILE
 ncatted -h -a units,RAINide,o,c,'mm yr-1' $OUTFILE
 ncatted -h -a units,RAINctl,o,c,'mm yr-1' $OUTFILE
-ncatted -h -a units,time,o,c,'year of simulation' $OUTFILE
+ncatted -h -a units,time,o,c,'years since 1971-01-01' $OUTFILE
+
+ncra -O -v NPPide,NPPctl,RAINide,RAINctl --op_typ=avg $OUTFILE $WORKDIR/NPP_GPP_avg.nc
