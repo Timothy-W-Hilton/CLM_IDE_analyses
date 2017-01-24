@@ -79,7 +79,7 @@ class QianMonthlyPCPData(object):
     The monthly total values are calculated by QianTotaller
     """
 
-    def __init__(self, fname, var):
+    def __init__(self, fname, var=None):
         """populate field monthly_pcp
 
         ARGS:
@@ -284,8 +284,8 @@ class QianMonthlyPCPData(object):
 
 
 def get_f05g16_pcp(interp_flag=False):
-    pcp_ncfile = os.path.join(os.getenv('SCRATCH'),
-                              'qian_pcp_annual_totals.nc')
+    pcp_ncfile = os.path.join(os.getenv('CSCRATCH'),
+                              'qian_pcp_annual_pcp_totals.nc')
     qd = QianMonthlyPCPData(pcp_ncfile)
     qd.read_nc()
     d = CLM_Domain(fname=os.path.join('/', 'global',
