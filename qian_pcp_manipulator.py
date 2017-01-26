@@ -417,6 +417,7 @@ def get_reduced_pcp_annual_totals():
 if __name__ == "__main__":
 
     qd = get_f05g16_pcp(interp_flag=False)
+    qdi = get_f05g16_pcp(interp_flag=True)
 
     (domain_f05_g16, santacruz, mclaughlin,
      sierra_foothills, loma_ridge, sedgewick,
