@@ -11,6 +11,7 @@ Part I: Forcing Data and Evaluations, Journal of Hydrometeorology, 7(5), 953'
 """
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.basemap import Basemap
 import numpy as np
 import netCDF4
 from qian_pcp_manipulator import get_f05g16_pcp
@@ -20,8 +21,8 @@ from timutils.io import delete_if_exists
 def qian_ltmean_pcp_ncdf(outfile, qd):
     delete_if_exists(outfile)
     nc = netCDF4.Dataset(outfile, mode='w', format="NETCDF3_CLASSIC")
-    nc.createDimension("lat", qd.dlat.shape[1])
-    nc.createDimension("lon", qd.dlon.shape[0])
+    nc.createDimension("lat", qd.dlat.shape[0])
+    nc.createDimension("lon", qd.dlon.shape[1])
     latvar = nc.createVariable("lat", "f8", ("lat", "lon"))
     lonvar = nc.createVariable("lon", "f8", ("lat", "lon"))
     pcpvar = nc.createVariable("pcp", "f8", ("lat", "lon"))
@@ -43,6 +44,9 @@ def qian_ltmean_pcp_ncdf(outfile, qd):
 if __name__ == "__main__":
     qd = get_f05g16_pcp(interp_flag=False)
     qdi = get_f05g16_pcp(interp_flag=True)
+    qian_ltmean_pcp_ncdf('test.nc', qdi)
+
+    # --- plotting code below ---
     vmax = np.max((qdi.data.max(), qd.data.max()))
     plt.imshow(qd.data[0, ...],
                cmap='Blues',
@@ -50,6 +54,16 @@ if __name__ == "__main__":
     plt.colorbar()
     plt.figure()
     plt.imshow(qdi.data[0, ...], cmap='Blues', vmax=vmax)
+    plt.colorbar()
+
+    plt.figure()
+    m = Basemap()
+    m.pcolormesh(qdi.dlon, qdi.dlat,
+                 qdi.data.mean(axis=0),
+                 cmap='Blues',
+                 vmax=vmax,
+                 latlon=True)
+    m.drawcoastlines()
     plt.colorbar()
 
     qds = qd.data.sum(axis=(1, 2))
