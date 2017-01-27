@@ -30,8 +30,7 @@ def qian_ltmean_pcp_ncdf(outfile, qd):
     latvar.units = 'deg N'
     lonvar[:] = qd.dlon[...]
     lonvar.units = 'deg E'
-    n_secs_per_year = 60 * 60 * 24 * 365  # seconds in a year
-    pcpvar[:] = qd.data.mean(axis=0) * n_secs_per_year
+    pcpvar[:] = qd.data.mean(axis=0)
     pcpvar.units = 'mm yr-1'
     pcpvar.description = (
         'Qian et al (2006) 1948-2004 long-term mean precipitation.\n'
