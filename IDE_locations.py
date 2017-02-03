@@ -1,4 +1,6 @@
 import os
+import numpy as np
+import pandas as pd
 from clm_domain import CLM_Domain, Location
 
 
@@ -41,6 +43,22 @@ def CLMf05g16_get_spatial_info():
     # coordinates from http://fluxnet.ornl.gov/site/1036
     wlef = Location((-90.2723, ), (45.9459, ), 'WLEF')
     wlef.get_clm_xy(domain_f05_g16)
+    carrizo_plain = Location((-119.8633, ), (35.1899, ), 'Carrizo Plain')
+    carrizo_plain.get_clm_xy(domain_f05_g16)
     return (domain_f05_g16, santacruz, mclaughlin,
             sierra_foothills, loma_ridge, sedgewick, boxsprings, ARM_SGP,
-            harvard, wlef, mammoth_lakes)
+            harvard, wlef, mammoth_lakes, carrizo_plain)
+
+
+def sites_to_csv(fname='IDE_sites.csv'):
+    """create a CSV file of locations specified in CLMf05g16_get_spatial_info
+    """
+    sites = CLMf05g16_get_spatial_info()
+    sites = sites[1:]  # first element is the domain
+    sites_df = pd.DataFrame(
+        {'name': np.array([s.name for s in sites]),
+         'lat': np.array([s.lat[0] for s in sites]),
+         'lon': np.array([s.lon[0] for s in sites]),
+         'clm_x': np.array([s.clm_x for s in sites]),
+         'clm_y': np.array([s.clm_y for s in sites])})
+    sites_df.to_csv(fname)
