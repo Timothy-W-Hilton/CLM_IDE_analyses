@@ -249,8 +249,10 @@ class QianMonthlyPCPData(object):
                 for here in locations:
                     pt = mcal.scatter(here.lon[0], here.lat[0], latlon=True,
                                       marker='*', s=100, c='r')
-                    ax2.annotate(s="{:0.2f}".format(frac[here.clm_y,
-                                                         here.clm_x]),
+                    # ax2.annotate(s="{:0.2f}".format(frac[here.clm_y,
+                    #                                      here.clm_x]),
+                    #              xy=mcal(here.lon[0], here.lat[0]))
+                    ax2.annotate(s=here.name,
                                  xy=mcal(here.lon[0], here.lat[0]))
             except IndexError:
                 print('{sitename}: clm_x or clm_y'
@@ -419,13 +421,14 @@ if __name__ == "__main__":
     qd = get_f05g16_pcp(interp_flag=False)
     qdi = get_f05g16_pcp(interp_flag=True)
 
-    (domain_f05_g16, santacruz, mclaughlin,
-     sierra_foothills, loma_ridge, sedgewick,
-     boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
-    qd.show_reduction_pct((santacruz, mclaughlin,
-                           sierra_foothills, loma_ridge,
-                           sedgewick, boxsprings))
-    get_reduced_pcp_annual_totals()  # needs interp_flat=False
+    (domain_f05_g16, santacruz, mclaughlin, sierra_foothills,
+     loma_ridge, sedgewick, boxsprings, ARM_SGP, harvard, wlef,
+     mammoth_lakes, carrizo_plain) = CLMf05g16_get_spatial_info()
+    qdi.show_reduction_pct((santacruz, mclaughlin, sierra_foothills,
+                            loma_ridge, sedgewick, boxsprings, ARM_SGP,
+                            harvard, wlef, mammoth_lakes,
+                            carrizo_plain))
+    # get_reduced_pcp_annual_totals()  # needs interp_flat=False
 
     # for this_site in (santacruz, mclaughlin, sierra_foothills,
     #                   loma_ridge, sedgewick, boxsprings, ARM_SGP):
