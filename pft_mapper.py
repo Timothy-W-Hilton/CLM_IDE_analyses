@@ -85,6 +85,7 @@ class IDEPaperMap(object):
                                     cmap=self.colormap)
             # norm=self.norm)
         plt.colorbar(cm, cax=self.axcbar, orientation='horizontal')
+        self.fig.suptitle('PFT: ' + pft_data.pft_name)
         # colorbar_from_cmap_norm.colorbar_from_cmap_norm(cmap=self.colormap,
         #                                                 norm=self.norm,
         #                                                 cax=self.axcbar,
@@ -141,6 +142,14 @@ if __name__ == "__main__":
                                    'CLM_Output',
                                    'pft-physiology.clm40.c130424.nc')
     fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
-    this_pft = PFTData(fname_pft_data, fname_pft_names, 0)
+
     map = IDEPaperMap(vmin=0.0, vmax=100.0, ncolorlevs=11)
-    map.map_pft(this_pft)
+    for this_pft_idx in np.arange(17):
+        print 'mapping PFT {:02d}'.format(this_pft_idx)
+        try:
+            this_pft = PFTData(fname_pft_data, fname_pft_names, this_pft_idx)
+            map.map_pft(this_pft)
+            map.fig.savefig('PFT{:02d}_pct_map.png'.format(this_pft_idx))
+            plt.close(map.fig)
+        except:
+            print "error mapping PFT {:02d}".format(this_pft_idx)
