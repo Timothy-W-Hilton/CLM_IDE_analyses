@@ -1,10 +1,12 @@
 import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import netCDF4
 from timutils import colormap_nlevs, colorbar_from_cmap_norm
 import cartopy.crs as ccrs
 from cartopy.feature import NaturalEarthFeature
+
 
 class IDEPaperMap(object):
     """setup a two-panel map with horizonal colorbar
@@ -37,11 +39,11 @@ class IDEPaperMap(object):
         """
         self.fig = plt.figure(figsize=(12, 6))
         self.mapworld = plt.subplot2grid((60, 11), (0, 0),
-                                        colspan=5, rowspan=50,
-                                        projection=self.projglobe)
+                                         colspan=5, rowspan=50,
+                                         projection=self.projglobe)
         self.mapcal = plt.subplot2grid((60, 11), (0, 6),
-                                      colspan=5, rowspan=50,
-                                      projection=self.projcal)
+                                       colspan=5, rowspan=50,
+                                       projection=self.projcal)
         self.axcbar = plt.subplot2grid((60, 11), (52, 0),
                                        colspan=11, rowspan=8)
 
@@ -91,6 +93,19 @@ class IDEPaperMap(object):
         #                                                 cax=self.axcbar,
         #                                                 format=None,
         #                                                 vals=pft_data.pft_data)
+
+    def draw_sites(self):
+        """draw IDE site locations to map
+        """
+        sites = pd.read_csv(os.path.join('/Users', 'tim', 'work',
+                                         'Code',
+                                         'CLMHyperbolaFit',
+                                         'IDE_sites.csv'))
+        for s in sites.itertuples():
+            self.mapcal.plot(s.lon, s.lat, marker='*',
+                             markerfacecolor="None",
+                             markersize=12,
+                             transform=ccrs.Geodetic())
 
 
 class PFTData(object):
@@ -144,12 +159,14 @@ if __name__ == "__main__":
     fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
 
     map = IDEPaperMap(vmin=0.0, vmax=100.0, ncolorlevs=11)
-    for this_pft_idx in np.arange(17):
+    for this_pft_idx in np.arange(1):  # there are 17 PFTs
         print 'mapping PFT {:02d}'.format(this_pft_idx)
         try:
             this_pft = PFTData(fname_pft_data, fname_pft_names, this_pft_idx)
             map.map_pft(this_pft)
+            map.draw_sites()
             map.fig.savefig('PFT{:02d}_pct_map.png'.format(this_pft_idx))
             plt.close(map.fig)
         except:
             print "error mapping PFT {:02d}".format(this_pft_idx)
+            raise
