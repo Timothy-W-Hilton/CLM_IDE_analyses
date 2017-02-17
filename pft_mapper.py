@@ -53,38 +53,49 @@ class IDEPaperMap(object):
                                      name='admin_1_states_provinces_shp')
         self.axcal.add_feature(states)
 
+    def map_pft(self, pft_data):
+        """plot grid cell percentage for one PFT on a map
 
-class PFTReader(object):
+        ARGS:
+        pft_data: a PFTData object
+        """
+
+class PFTData(object):
     """reads CLM PFT percentages
     """
 
-    def __init__(self, fname_pft_data, fname_pft_names):
-        """PFTReader constructor
+    def __init__(self, fname_pft_data, fname_pft_names, pft_idx):
+        """PFTData constructor
 
-        initializes fields fname_pft_data, fname_pft_names, pft_data, pft_names
+        initializes fields fname_pft_data, fname_pft_names,
+        pft_data, pft_names, pft_idx
 
         ARGS:
-        fname_pft_data: full path to the netCDF file containing PFT percentages
+        fname_pft_data: full path to the netCDF file containing PFT
+            percentages
+        fname_pft_names: full path to the netCDF file containing PFT
+            names
+        pft_idx: index of the pft to parse (0 to 21, currently)
         """
         self.fname_pft_data = fname_pft_data
         self.fname_pft_names = fname_pft_names
-        self.read_pft_names()
-        self.pft_data = None
+        self.pft_idx = pft_idx
+        self.__read_pft_names()
+        self.__read()
 
-    def read_pft_names(self):
+    def __read_pft_names(self):
         """read pft names from netcdf file
         """
         nc = netCDF4.Dataset(self.fname_pft_names)
-        pft_names = nc.variables['pftname'][:]
+        pft_name = nc.variables['pftname'][self.pft_idx]
         nc.close()
-        self.pft_names = [''.join(list(this_pft)).strip()
-                          for this_pft in pft_names]
+        self.pft_name = ''.join(list(pft_name)).strip()
 
-    def read(self, pft_idx):
+    def __read(self):
         """read a global map of PFT locations for one PFT
         """
         nc = netCDF4.Dataset(self.fname_pft_data)
-        self.pft_data = nc.variables['PCT_PFT'][pft_idx, ...]
+        self.pft_data = nc.variables['PCT_PFT'][self.pft_idx, ...]
         nc.close()
 
 
@@ -93,4 +104,4 @@ if __name__ == "__main__":
                                    'CLM_Output',
                                    'pft-physiology.clm40.c130424.nc')
     fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
-    pfts = PFTReader(fname_pft_data, fname_pft_names)
+    pfts = PFTData(fname_pft_data, fname_pft_names, 0)
