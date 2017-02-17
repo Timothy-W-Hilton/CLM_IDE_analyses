@@ -20,8 +20,8 @@ class IDEPaperMap(object):
         else:
             self.colormap = colormap
         self.ncolorlevs = ncolorlevs
-        self.axworld = None
-        self.axcal = None
+        self.mapworld = None
+        self.mapcal = None
         self.axcbar = None
         self.fig = None
         self.projcal = ccrs.LambertConformal(central_longitude=262.5,
@@ -36,10 +36,10 @@ class IDEPaperMap(object):
         """create axes for two-panel plot with colorbar at bottom
         """
         self.fig = plt.figure(figsize=(12, 6))
-        self.axworld = plt.subplot2grid((60, 11), (0, 0),
+        self.mapworld = plt.subplot2grid((60, 11), (0, 0),
                                         colspan=5, rowspan=50,
                                         projection=self.projglobe)
-        self.axcal = plt.subplot2grid((60, 11), (0, 6),
+        self.mapcal = plt.subplot2grid((60, 11), (0, 6),
                                       colspan=5, rowspan=50,
                                       projection=self.projcal)
         self.axcbar = plt.subplot2grid((60, 11), (52, 0),
@@ -50,15 +50,15 @@ class IDEPaperMap(object):
 
         draw state boundaries in california panel
         """
-        for this_ax in (self.axcal, self.axworld):
+        for this_ax in (self.mapcal, self.mapworld):
             this_ax.coastlines()
             this_ax.gridlines(draw_labels=False)
-        self.axcal.set_extent((-122, -114, 32, 43))
+        self.mapcal.set_extent((-122, -114, 32, 43))
         states = NaturalEarthFeature(category='cultural',
                                      scale='50m',
                                      facecolor='none',
                                      name='admin_1_states_provinces_shp')
-        self.axcal.add_feature(states)
+        self.mapcal.add_feature(states)
 
     def __get_cmap_norm(self):
         """get colormap, normalizer
@@ -77,13 +77,13 @@ class IDEPaperMap(object):
         ARGS:
         pft_data: a PFTData object
         """
-        for ax in (self.axworld, self.axcal):
-            cm = ax.pcolormesh(pft_data.lon,
-                               pft_data.lat,
-                               pft_data.pft_data,
-                               transform=ccrs.PlateCarree(),
-                               cmap=self.colormap)
-                               # norm=self.norm)
+        for thismap in (self.mapworld, self.mapcal):
+            cm = thismap.pcolormesh(pft_data.lon,
+                                    pft_data.lat,
+                                    pft_data.pft_data,
+                                    transform=ccrs.PlateCarree(),
+                                    cmap=self.colormap)
+            # norm=self.norm)
         plt.colorbar(cm, cax=self.axcbar, orientation='horizontal')
         # colorbar_from_cmap_norm.colorbar_from_cmap_norm(cmap=self.colormap,
         #                                                 norm=self.norm,
