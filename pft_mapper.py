@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import netCDF4
-from timutils import midpt_norm, colorbar_from_cmap_norm
+from timutils import colormap_nlevs, colorbar_from_cmap_norm
 import cartopy.crs as ccrs
 from cartopy.feature import NaturalEarthFeature
 
@@ -12,7 +12,14 @@ class IDEPaperMap(object):
     world map on left panel, California map on right panel
     """
 
-    def __init__(self):
+    def __init__(self, vmin, vmax, ncolorlevs=10, colormap=None):
+        self.vmin = vmin
+        self.vmax = vmax
+        if colormap is None:
+            self.colormap = plt.get_cmap('Blues')
+        else:
+            self.colormap = colormap
+        self.ncolorlevs = ncolorlevs
         self.axworld = None
         self.axcal = None
         self.axcbar = None
@@ -21,9 +28,9 @@ class IDEPaperMap(object):
                                              central_latitude=38.5,
                                              standard_parallels=(38.5, 38.5))
         self.projglobe = ccrs.Miller()
-
         self.__setup_axes()
         self.__setup_maps()
+        self.__get_cmap_norm()
 
     def __setup_axes(self):
         """create axes for two-panel plot with colorbar at bottom
@@ -53,12 +60,31 @@ class IDEPaperMap(object):
                                      name='admin_1_states_provinces_shp')
         self.axcal.add_feature(states)
 
+    def __get_cmap_norm(self):
+        """get colormap, normalizer
+
+        """
+        self.cmap, self.norm = colormap_nlevs.setup_colormap(
+            vmin=self.vmin,
+            vmax=self.vmax,
+            nlevs=self.ncolorlevs,
+            cmap=plt.get_cmap(plt.get_cmap('Blues')),
+            extend='neither')
+
     def map_pft(self, pft_data):
         """plot grid cell percentage for one PFT on a map
 
         ARGS:
         pft_data: a PFTData object
         """
+        for ax in (self.axworld, self.axcal):
+            ax.pcolormesh(pft_data.lon,
+                          pft_data.lat,
+                          pft_data.pft_data,
+                          transform=ccrs.PlateCarree())
+                          # cmap=self.colormap,
+                          # norm=self.norm)
+
 
 class PFTData(object):
     """reads CLM PFT percentages
@@ -68,7 +94,7 @@ class PFTData(object):
         """PFTData constructor
 
         initializes fields fname_pft_data, fname_pft_names,
-        pft_data, pft_names, pft_idx
+        pft_data, pft_names, pft_idx, lon, lat
 
         ARGS:
         fname_pft_data: full path to the netCDF file containing PFT
@@ -80,6 +106,7 @@ class PFTData(object):
         self.fname_pft_data = fname_pft_data
         self.fname_pft_names = fname_pft_names
         self.pft_idx = pft_idx
+
         self.__read_pft_names()
         self.__read()
 
@@ -96,7 +123,11 @@ class PFTData(object):
         """
         nc = netCDF4.Dataset(self.fname_pft_data)
         self.pft_data = nc.variables['PCT_PFT'][self.pft_idx, ...]
+        self.lon = nc.variables['LONGXY'][...]
+        self.lat = nc.variables['LATIXY'][...]
         nc.close()
+        idx = self.lon > 180.0
+        self.lon[idx] = -1.0 * ((-1.0 * self.lon[idx]) % 180.0)
 
 
 if __name__ == "__main__":
@@ -104,4 +135,6 @@ if __name__ == "__main__":
                                    'CLM_Output',
                                    'pft-physiology.clm40.c130424.nc')
     fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
-    pfts = PFTData(fname_pft_data, fname_pft_names, 0)
+    this_pft = PFTData(fname_pft_data, fname_pft_names, 0)
+    map = IDEPaperMap(vmin=0.0, vmax=100.0)
+    map.map_pft(this_pft)
