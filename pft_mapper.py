@@ -78,12 +78,18 @@ class IDEPaperMap(object):
         pft_data: a PFTData object
         """
         for ax in (self.axworld, self.axcal):
-            ax.pcolormesh(pft_data.lon,
-                          pft_data.lat,
-                          pft_data.pft_data,
-                          transform=ccrs.PlateCarree())
-                          # cmap=self.colormap,
-                          # norm=self.norm)
+            cm = ax.pcolormesh(pft_data.lon,
+                               pft_data.lat,
+                               pft_data.pft_data,
+                               transform=ccrs.PlateCarree(),
+                               cmap=self.colormap)
+                               # norm=self.norm)
+        plt.colorbar(cm, cax=self.axcbar, orientation='horizontal')
+        # colorbar_from_cmap_norm.colorbar_from_cmap_norm(cmap=self.colormap,
+        #                                                 norm=self.norm,
+        #                                                 cax=self.axcbar,
+        #                                                 format=None,
+        #                                                 vals=pft_data.pft_data)
 
 
 class PFTData(object):
@@ -136,5 +142,5 @@ if __name__ == "__main__":
                                    'pft-physiology.clm40.c130424.nc')
     fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
     this_pft = PFTData(fname_pft_data, fname_pft_names, 0)
-    map = IDEPaperMap(vmin=0.0, vmax=100.0)
+    map = IDEPaperMap(vmin=0.0, vmax=100.0, ncolorlevs=11)
     map.map_pft(this_pft)
