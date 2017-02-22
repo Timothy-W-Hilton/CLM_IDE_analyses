@@ -87,7 +87,8 @@ class IDEPaperMap(object):
                                     cmap=self.cmap,
                                     norm=self.norm)
         plt.colorbar(cm, cax=self.axcbar, orientation='horizontal')
-        self.fig.suptitle('PFT: ' + pft_data.pft_name)
+        self.axcbar.set_title('percentage')
+        self.fig.suptitle('PFT: ' + pft_data.pft_name.replace('_', ' '))
 
     def draw_sites(self):
         """draw IDE site locations to map
@@ -154,14 +155,14 @@ if __name__ == "__main__":
     fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
 
     map = IDEPaperMap(vmin=0.0, vmax=100.0, ncolorlevs=11)
-    for this_pft_idx in np.arange(1):  # there are 17 PFTs
+    for this_pft_idx in np.arange(17):  # there are 17 PFTs
         print 'mapping PFT {:02d}'.format(this_pft_idx)
         try:
             this_pft = PFTData(fname_pft_data, fname_pft_names, this_pft_idx)
             map.map_pft(this_pft)
             map.draw_sites()
             map.fig.savefig('PFT{:02d}_pct_map.png'.format(this_pft_idx))
-            # plt.close(map.fig)
+            plt.close(map.fig)
         except:
             print "error mapping PFT {:02d}".format(this_pft_idx)
             raise
