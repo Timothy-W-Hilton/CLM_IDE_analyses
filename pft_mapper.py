@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import netCDF4
-from timutils import colormap_nlevs, colorbar_from_cmap_norm
+from timutils import colormap_nlevs
 import cartopy.crs as ccrs
 from cartopy.feature import NaturalEarthFeature
 
@@ -18,9 +18,9 @@ class IDEPaperMap(object):
         self.vmin = vmin
         self.vmax = vmax
         if colormap is None:
-            self.colormap = plt.get_cmap('Blues')
+            self.base_colormap = plt.get_cmap('Blues')
         else:
-            self.colormap = colormap
+            self.base_colormap = colormap
         self.ncolorlevs = ncolorlevs
         self.mapworld = None
         self.mapcal = None
@@ -70,7 +70,7 @@ class IDEPaperMap(object):
             vmin=self.vmin,
             vmax=self.vmax,
             nlevs=self.ncolorlevs,
-            cmap=plt.get_cmap(plt.get_cmap('Blues')),
+            cmap=self.base_colormap,
             extend='neither')
 
     def map_pft(self, pft_data):
@@ -84,15 +84,10 @@ class IDEPaperMap(object):
                                     pft_data.lat,
                                     pft_data.pft_data,
                                     transform=ccrs.PlateCarree(),
-                                    cmap=self.colormap)
-            # norm=self.norm)
+                                    cmap=self.cmap,
+                                    norm=self.norm)
         plt.colorbar(cm, cax=self.axcbar, orientation='horizontal')
         self.fig.suptitle('PFT: ' + pft_data.pft_name)
-        # colorbar_from_cmap_norm.colorbar_from_cmap_norm(cmap=self.colormap,
-        #                                                 norm=self.norm,
-        #                                                 cax=self.axcbar,
-        #                                                 format=None,
-        #                                                 vals=pft_data.pft_data)
 
     def draw_sites(self):
         """draw IDE site locations to map
@@ -166,7 +161,7 @@ if __name__ == "__main__":
             map.map_pft(this_pft)
             map.draw_sites()
             map.fig.savefig('PFT{:02d}_pct_map.png'.format(this_pft_idx))
-            plt.close(map.fig)
+            # plt.close(map.fig)
         except:
             print "error mapping PFT {:02d}".format(this_pft_idx)
             raise
