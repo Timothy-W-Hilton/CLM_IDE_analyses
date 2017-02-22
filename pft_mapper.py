@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import netCDF4
-from timutils import colormap_nlevs
 import cartopy.crs as ccrs
 from cartopy.feature import NaturalEarthFeature
-
+from RegionTester.region_tester import InUSState
+from timutils import colormap_nlevs
 
 class IDEPaperMap(object):
     """setup a two-panel map with horizonal colorbar
@@ -148,14 +148,9 @@ class PFTData(object):
         self.lon[idx] = -1.0 * ((-1.0 * self.lon[idx]) % 180.0)
 
 
-if __name__ == "__main__":
-    fname_pft_names = os.path.join('/Users', 'tim', 'work', 'Data',
-                                   'CLM_Output',
-                                   'pft-physiology.clm40.c130424.nc')
-    fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
-
+def map_all_PFTs(fname_pft_names, fname_pft_data):
     map = IDEPaperMap(vmin=0.0, vmax=100.0, ncolorlevs=11)
-    for this_pft_idx in np.arange(17):  # there are 17 PFTs
+    for this_pft_idx in np.arange(2):  # there are 17 PFTs
         print 'mapping PFT {:02d}'.format(this_pft_idx)
         try:
             this_pft = PFTData(fname_pft_data, fname_pft_names, this_pft_idx)
@@ -166,3 +161,11 @@ if __name__ == "__main__":
         except:
             print "error mapping PFT {:02d}".format(this_pft_idx)
             raise
+
+
+if __name__ == "__main__":
+    fname_pft_names = os.path.join('/Users', 'tim', 'work', 'Data',
+                                   'CLM_Output',
+                                   'pft-physiology.clm40.c130424.nc')
+    fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
+    map_all_PFTs(fname_pft_names, fname_pft_data)
