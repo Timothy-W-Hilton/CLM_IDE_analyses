@@ -262,6 +262,12 @@ class PFTData(object):
 
 
 def map_all_PFTs(fname_pft_names, fname_pft_data):
+    """create a two-panel plots of CLM PFT global land area percentages
+
+    Creates one two-panel plot for each of 17 PFTs.  The left panel
+    shows the global distribution of the PFT, and the right panel
+    shows the California distribution with NRS/IDE sites.
+    """
     map = IDEPaperMap(vmin=0.0, vmax=100.0, ncolorlevs=11)
     for this_pft_idx in np.arange(17):  # there are 17 PFTs
         print 'mapping PFT {:02d}'.format(this_pft_idx)
@@ -276,19 +282,19 @@ def map_all_PFTs(fname_pft_names, fname_pft_data):
             raise
 
 
-if __name__ == "__main__":
-    fname_pft_names = os.path.join('/Users', 'tim', 'work', 'Data',
-                                   'CLM_Output',
-                                   'pft-physiology.clm40.c130424.nc')
-    fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
-    # map_all_PFTs(fname_pft_names, fname_pft_data)
+def map_california_pfts(fname_pft_names, fname_pft_data):
+    """create a seven-panel plot of six most common Californa PFTs
+
+    The seventh panel shows the total combined coverage of those six
+    PFTs.
+    """
     cal_6panels = Cal6PanelMap(vmin=0.0, vmax=100.0, ncolorlevs=11)
     ax_idx = 0
     # these PFTs have significant presence in California
     california_pfts = (0, 1, 2, 10, 13, 15)
     pct_sum = None
     for this_pft_idx in california_pfts:
-        print 'mapping PFT {:02d}'.format(this_pft_idx)
+        print 'mapping California PFT {:02d}'.format(this_pft_idx)
         try:
             this_pft = PFTData(fname_pft_data, fname_pft_names, this_pft_idx)
             cal_6panels.map_pft(this_pft, ax_idx)
@@ -314,3 +320,12 @@ if __name__ == "__main__":
     cal_6panels.axsum.set_title('total pct coverage', {'fontsize': 10})
     cal_6panels.draw_sites()
     cal_6panels.fig.savefig('California_PFTs.png')
+    plt.close(cal_6panels.fig)
+
+if __name__ == "__main__":
+    fname_pft_names = os.path.join('/Users', 'tim', 'work', 'Data',
+                                   'CLM_Output',
+                                   'pft-physiology.clm40.c130424.nc')
+    fname_pft_data = '/Users/tim/work/Data/CLM_Output/CLM_PFTs.nc'
+    map_all_PFTs(fname_pft_names, fname_pft_data)
+    map_california_pfts(fname_pft_names, fname_pft_data)
