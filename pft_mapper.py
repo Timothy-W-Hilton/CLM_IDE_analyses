@@ -85,6 +85,23 @@ class Cal6PanelMap(object):
             cmap=self.base_colormap,
             extend='neither')
 
+    def draw_sites(self):
+        """draw IDE site locations to map
+        """
+        sites = pd.read_csv(os.path.join('/Users', 'tim', 'work',
+                                         'Code',
+                                         'CLMHyperbolaFit',
+                                         'IDE_sites.csv'))
+        all_axes = self.mapdict
+        all_axes.update({'mapsum': self.axsum})
+        for this_map in all_axes.itervalues():
+            for s in sites.itertuples():
+                this_map.plot(s.lon, s.lat, marker='*',
+                              markerfacecolor="None",
+                              markersize=10,
+                              transform=ccrs.Geodetic())
+
+
     def map_pft(self, pft_data, idx):
         """plot grid cell percentage for one PFT on a map
 
@@ -282,8 +299,18 @@ if __name__ == "__main__":
             if pct_sum is None:
                 pct_sum = this_pft.pft_data
             else:
-                pct_sum += this_pft.pft_data
+                pct_sum = pct_sum + this_pft.pft_data
         except:
             print "error mapping PFT {:02d}".format(this_pft_idx)
             raise
         ax_idx += 1
+    pct_sum[pct_sum > 99.9] = 99.9
+    cal_6panels.axsum.pcolormesh(this_pft.lon,
+                                 this_pft.lat,
+                                 pct_sum,
+                                 cmap=cal_6panels.cmap,
+                                 norm=cal_6panels.norm,
+                                 transform=ccrs.PlateCarree())
+    cal_6panels.axsum.set_title('total pct coverage', {'fontsize': 10})
+    cal_6panels.draw_sites()
+    cal_6panels.fig.savefig('California_PFTs.png')
