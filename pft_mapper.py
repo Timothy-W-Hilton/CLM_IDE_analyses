@@ -35,25 +35,28 @@ class Cal6PanelMap(object):
         """create axes for two-panel plot with colorbar at bottom
         """
         self.fig = plt.figure(figsize=(8, 8))
-        self.mapdict = {'map11':  plt.subplot2grid((120, 17), (0, 0),
+        self.mapdict = {'map11':  plt.subplot2grid((170, 17), (0, 0),
                                                    colspan=5, rowspan=50,
                                                    projection=self.projcal),
-                        'map12': plt.subplot2grid((120, 17), (0, 6),
+                        'map12': plt.subplot2grid((170, 17), (0, 6),
                                                   colspan=5, rowspan=50,
                                                   projection=self.projcal),
-                        'map13': plt.subplot2grid((120, 17), (0, 12),
+                        'map13': plt.subplot2grid((170, 17), (0, 12),
                                                   colspan=5, rowspan=50,
                                                   projection=self.projcal),
-                        'map21': plt.subplot2grid((120, 17), (52, 0),
+                        'map21': plt.subplot2grid((170, 17), (55, 0),
                                                   colspan=5, rowspan=50,
                                                   projection=self.projcal),
-                        'map22': plt.subplot2grid((120, 17), (52, 6),
+                        'map22': plt.subplot2grid((170, 17), (55, 6),
                                                   colspan=5, rowspan=50,
                                                   projection=self.projcal),
-                        'map23': plt.subplot2grid((120, 17), (52, 12),
+                        'map23': plt.subplot2grid((170, 17), (55, 12),
                                                   colspan=5, rowspan=50,
                                                   projection=self.projcal)}
-        self.axcbar = plt.subplot2grid((120, 17), (104, 0),
+        self.axsum = plt.subplot2grid((170, 17), (110, 6),
+                                      colspan=5, rowspan=50,
+                                      projection=self.projcal)
+        self.axcbar = plt.subplot2grid((170, 17), (167, 0),
                                        colspan=16, rowspan=8)
 
     def __setup_maps(self):
@@ -63,7 +66,9 @@ class Cal6PanelMap(object):
                                      scale='50m',
                                      facecolor='none',
                                      name='admin_1_states_provinces_shp')
-        for this_map in self.mapdict.itervalues():
+        all_axes = self.mapdict
+        all_axes.update({'mapsum': self.axsum})
+        for this_map in all_axes.itervalues():
             this_map.coastlines()
             this_map.gridlines(draw_labels=False)
             this_map.set_extent((-122, -114, 32, 43))
