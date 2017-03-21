@@ -41,13 +41,11 @@ s <- select(s, case, doy, count, BTRAN, minval, maxval, cilo, cihi)
 ## TODO: get rid of color, use dashed lines and solid lines for
 ## control/drought
 
-group_colors <- c(control='#8c510a', drought='#01665e')
 levels(s$case) <- c('control', 'drought')
 
-h <- ggplot(s, aes(doy, BTRAN, group=case, col=case)) +
-    geom_ribbon(aes(ymin = cilo, ymax = cihi),
+h <- ggplot(s, aes(doy, BTRAN, group=case)) +
+    geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
                 fill="grey50", alpha=0.4) +
-    geom_line(aes(y = BTRAN), linetype=2) +
-    scale_colour_manual(values=group_colors) +
+    geom_line(aes(y = BTRAN, linetype=case)) +
     theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
     ylim(0.0, 1.0)  ## BTRAN varies in [0.0, 1.0]
