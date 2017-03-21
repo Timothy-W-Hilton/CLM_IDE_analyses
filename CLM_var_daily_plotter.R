@@ -3,6 +3,8 @@ library(ggthemes)
 library(dplyr)
 library(boot)
 
+DEBUGFLAG <- TRUE
+
 bootThetaMean <- function(x,i) {
     mean(x[i])
 }
@@ -26,18 +28,23 @@ boot_5_95 <- function(vals, R=1000) {
 
 df <- read.csv('./btran_daily.csv', header=TRUE)
 by_run <- group_by(select(df, case, loc, doy, value),
-                   case, doy)
+                   case, doy, loc)
+if (DEBUGFLAG){
+    ibootstrap <- 5  ## bootstrap iterations
+} else {
+    ibootstrap <- 1000
+}
 s <- summarize(by_run,
                count=n(),
                BTRAN=mean(value),
                minval=min(value),
                maxval=max(value),
-               ci=list(boot_5_95(value, R=5)))  ## needs a single value
+               ci=list(boot_5_95(value, R=ibootstrap)))
 s[['cilo']] <- unlist(lapply(s[['ci']], function(x) x[['cilo']]))
 s[['cilo']][s[['cilo']] < 0.0] <- 0.0
 s[['cihi']] <- unlist(lapply(s[['ci']], function(x) x[['cihi']]))
 s[['cihi']][s[['cihi']] > 1.0] <- 1.0
-s <- select(s, case, doy, count, BTRAN, minval, maxval, cilo, cihi)
+s <- select(s, loc, case, doy, count, BTRAN, minval, maxval, cilo, cihi)
 ## TODO: get rid of color, use dashed lines and solid lines for
 ## control/drought
 
