@@ -1,4 +1,5 @@
 library(ggplot2)
+library(ggthemes)
 library(dplyr)
 library(boot)
 
@@ -33,14 +34,20 @@ s <- summarize(by_run,
                maxval=max(value),
                ci=list(boot_5_95(value, R=5)))  ## needs a single value
 s[['cilo']] <- unlist(lapply(s[['ci']], function(x) x[['cilo']]))
+s[['cilo']][s[['cilo']] < 0.0] <- 0.0
 s[['cihi']] <- unlist(lapply(s[['ci']], function(x) x[['cihi']]))
+s[['cihi']][s[['cihi']] > 1.0] <- 1.0
 s <- select(s, case, doy, count, BTRAN, minval, maxval, cilo, cihi)
-
+## TODO: get rid of color, use dashed lines and solid lines for
+## control/drought
 
 group_colors <- c(control='#8c510a', drought='#01665e')
 levels(s$case) <- c('control', 'drought')
+
 h <- ggplot(s, aes(doy, BTRAN, group=case, col=case)) +
     geom_ribbon(aes(ymin = cilo, ymax = cihi),
                 fill="grey50", alpha=0.4) +
     geom_line(aes(y = BTRAN), linetype=2) +
-    scale_colour_manual(values=group_colors)
+    scale_colour_manual(values=group_colors) +
+    theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
+    ylim(0.0, 1.0)  ## BTRAN varies in [0.0, 1.0]
