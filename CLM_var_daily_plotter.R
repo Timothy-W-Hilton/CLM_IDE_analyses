@@ -50,9 +50,17 @@ s <- select(s, loc, case, doy, count, BTRAN, minval, maxval, cilo, cihi)
 
 levels(s$case) <- c('control', 'drought')
 
-h <- ggplot(s, aes(doy, BTRAN, group=case)) +
+## hacky test code for plotting multiple sites
+s[['loc']] <- as.character(s[['loc']])
+pseudo <- s
+pseudo[["loc"]] <- "Pseudodata"
+foo <- bind_rows(s, pseudo)
+foo[['loc']] <- as.factor(foo[['loc']])
+
+h <- ggplot(foo, aes(doy, BTRAN, group=case)) +
     geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
                 fill="grey50", alpha=0.4) +
     geom_line(aes(y = BTRAN, linetype=case)) +
     theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
-    ylim(0.0, 1.0)  ## BTRAN varies in [0.0, 1.0]
+    ylim(0.0, 1.0) + ## BTRAN varies in [0.0, 1.0]
+    facet_grid(loc ~ .)
