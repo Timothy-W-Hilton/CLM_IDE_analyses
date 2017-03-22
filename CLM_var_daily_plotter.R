@@ -49,11 +49,11 @@ s <- select(s, loc, case, doy, count, BTRAN, minval, maxval, cilo, cihi)
 ## control/drought
 
 levels(s$case) <- c('control', 'drought')
-h <- ggplot(foo, aes(doy, BTRAN, group=case)) +
+h <- ggplot(s, aes(doy, BTRAN, group=case)) +
     geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
                 fill="grey50", alpha=0.4) +
     geom_line(aes(y = BTRAN, linetype=case)) +
     theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
     ylim(0.0, 1.0) + ## BTRAN varies in [0.0, 1.0]
-    facet_grid(loc ~ .)
+    facet_wrap(~ loc, ncol=3 )
 ggsave(filename='YL_BTRAN_daily.pdf')
