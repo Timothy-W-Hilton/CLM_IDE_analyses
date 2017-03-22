@@ -26,7 +26,7 @@ boot_5_95 <- function(vals, R=1000) {
     return(ci)
 }
 
-df <- read.csv('./btran_daily.csv', header=TRUE)
+df <- read.csv('./btran_daily_all.csv.gz', header=TRUE)
 by_run <- group_by(select(df, case, loc, doy, value),
                    case, doy, loc)
 if (DEBUGFLAG){
@@ -64,3 +64,4 @@ h <- ggplot(foo, aes(doy, BTRAN, group=case)) +
     theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
     ylim(0.0, 1.0) + ## BTRAN varies in [0.0, 1.0]
     facet_grid(loc ~ .)
+ggsave(filename='YL_BTRAN_daily.pdf')
