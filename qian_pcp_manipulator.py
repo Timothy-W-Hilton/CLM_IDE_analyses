@@ -244,6 +244,16 @@ class QianMonthlyPCPData(object):
                              cmap=cmap,
                              norm=norm,
                              latlon=True)
+        # draw california map boundary box on world map
+        mworld.plot(x=(mcal.llcrnrlon, mcal.llcrnrlon,
+                       mcal.urcrnrlon, mcal.urcrnrlon,
+                       mcal.llcrnrlon),
+                    y=(mcal.llcrnrlat, mcal.urcrnrlat,
+                       mcal.urcrnrlat, mcal.llcrnrlat,
+                       mcal.llcrnrlat),
+                    latlon=True,
+                    color="#d95f02",
+                    linewidth=2.0)
         if locations is not None:
             try:
                 for here in locations:
