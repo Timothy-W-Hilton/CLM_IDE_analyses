@@ -7,6 +7,7 @@
 
 export VARNAME="$1"
 export RUNNAME="$2"
+export HISTSUFFIX="$3"
 # export INDIR="/global/cscratch1/sd/twhilton/daily_CLM_output/input"
 export INDIR="/global/cscratch1/sd/twhilton/archive/IDE_$RUNNAME/lnd/hist/"
 export OUTDIR="/global/cscratch1/sd/twhilton/daily_CLM_output/output"
@@ -17,8 +18,8 @@ module load nco
 echo 'starting' `date`
 echo "$FNAME_TMP $FNAME_FINAL"
 rm -fv $FNAME_TMP $FNAME_FINAL
-ncrcat -v $VARNAME $INDIR/IDE_${RUNNAME}.clm2.h1.* $FNAME_TMP
-# ncrcat -v $VARNAME $INDIR/IDE_${RUNNAME}.clm2.h1.0001-01-0* $FNAME_TMP
+ncrcat -v $VARNAME $INDIR/IDE_${RUNNAME}.clm2.${HISTSUFFIX}.* $FNAME_TMP
+#ncrcat -v $VARNAME $INDIR/IDE_${RUNNAME}.clm2.h1.0001-01-0* $FNAME_TMP
 ncra -O --mro -d time,1,,4,4 $FNAME_TMP $FNAME_FINAL
 rm -fv $FNAME_TMP
 echo 'done' `date`
