@@ -26,8 +26,18 @@ boot_5_95 <- function(vals, R=1000) {
     return(ci)
 }
 
-plotter <- function(varname) {
+plotter <- function(varname, plot_min=NA, plot_max=NA) {
+    ## plot daily CLM variable with 95% CI envelope, one panel per site
+    ##
+    ## ARGS:
+    ##  varname (string): name of variable to be plotted
+    ##
+    ## RETURNS:
+    ##  data frame containing daily values, labeled by site
 
+    ## TODO: min, max vals should be arguments
+    ## TODO: where to put scale factor?  Argument here, or in shell
+    ## script that builds daily netcdf files?
     fname_csv_base <- paste(varname, '_daily_all.csv.gz', sep='')
     df <- read.csv(file.path('/', 'global', 'cscratch1', 'sd',
                              'twhilton', 'daily_CLM_output', 'output',
@@ -46,14 +56,19 @@ plotter <- function(varname) {
                    minval=min(value),
                    maxval=max(value),
                    ci=list(boot_5_95(value, R=ibootstrap)))
+    if (is.na(plot_min)) {
+        plot_min <- min(s[['minval']], na.rm=TRUE)
+        cat(paste('plot_min', plot_min))
+    }
+    if (is.na(plot_max)) {
+        plot_max <- max(s[['maxval']], na.rm=TRUE)
+        cat(paste('plot_max', plot_max))
+    }
     s[['cilo']] <- unlist(lapply(s[['ci']], function(x) x[['cilo']]))
-    s[['cilo']][s[['cilo']] < 0.0] <- 0.0
+    s[['cilo']][s[['cilo']] < plot_min] <- plot_min
     s[['cihi']] <- unlist(lapply(s[['ci']], function(x) x[['cihi']]))
-    s[['cihi']][s[['cihi']] > 1.0] <- 1.0
+    s[['cihi']][s[['cihi']] > plot_max] <- plot_max
     s <- select(s, loc, case, doy, count, val, minval, maxval, cilo, cihi)
-    ## TODO: get rid of color, use dashed lines and solid lines for
-    ## control/drought
-
     levels(s$case) <- c('control', 'drought')
     h <- ggplot(s, aes(doy, val, group=case)) +
         labs(y=varname) +
@@ -61,10 +76,11 @@ plotter <- function(varname) {
                     fill="grey50", alpha=0.4) +
         geom_line(aes(y = val, linetype=case)) +
         theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
-        ylim(0.0, 1.0) + ## BTRAN varies in [0.0, 1.0]
+        ylim(plot_min, plot_max) + ## BTRAN varies in [0.0, 1.0]
         facet_wrap(~ loc, ncol=3 )
     fname <- paste(varname, '_daily_sites.pdf', sep='')
     cat(paste('saving', fname, '...'))
     ggsave(filename=fname)
     cat('done\n')
+    return(s)
 }
