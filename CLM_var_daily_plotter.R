@@ -26,11 +26,20 @@ boot_5_95 <- function(vals, R=1000) {
     return(ci)
 }
 
-plotter <- function(varname, plot_min=NA, plot_max=NA) {
+plotter <- function(varname,
+                    plot_min=NA, plot_max=NA,
+                    units="", units_factor=1.0) {
     ## plot daily CLM variable with 95% CI envelope, one panel per site
     ##
     ## ARGS:
     ##  varname (string): name of variable to be plotted
+    ##  plot_min (float): vertical axis minimum (default is min(95%
+    ##      confidence interval)
+    ##  plot_max (float): vertical axis maximum (default is max(95%
+    ##      confidence interval)
+    ##  units (string): units, to be appended to vertical axis label
+    ##  units_factor (float): units conversion factor to be multiplied
+    ##      into requested variable.  Default is 1.0.
     ##
     ## RETURNS:
     ##  data frame containing daily values, labeled by site
@@ -43,6 +52,7 @@ plotter <- function(varname, plot_min=NA, plot_max=NA) {
                              'twhilton', 'daily_CLM_output', 'output',
                              fname_csv_base),
                    header=TRUE)
+    df[['value']] <- df[['value']] * units_factor
     by_run <- group_by(select(df, case, loc, doy, value),
                        case, doy, loc)
     if (DEBUGFLAG){
@@ -71,7 +81,7 @@ plotter <- function(varname, plot_min=NA, plot_max=NA) {
     s <- select(s, loc, case, doy, count, val, minval, maxval, cilo, cihi)
     levels(s$case) <- c('control', 'drought')
     h <- ggplot(s, aes(doy, val, group=case)) +
-        labs(y=varname) +
+        labs(y=paste(varname, units)) +
         geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
                     fill="grey50", alpha=0.4) +
         geom_line(aes(y = val, linetype=case)) +
