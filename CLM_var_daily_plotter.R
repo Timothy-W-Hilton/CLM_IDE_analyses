@@ -56,18 +56,18 @@ plotter <- function(varname, plot_min=NA, plot_max=NA) {
                    minval=min(value),
                    maxval=max(value),
                    ci=list(boot_5_95(value, R=ibootstrap)))
-    if (is.na(plot_min)) {
-        plot_min <- min(s[['minval']], na.rm=TRUE)
-        cat(paste('plot_min', plot_min))
-    }
-    if (is.na(plot_max)) {
-        plot_max <- max(s[['maxval']], na.rm=TRUE)
-        cat(paste('plot_max', plot_max))
-    }
     s[['cilo']] <- unlist(lapply(s[['ci']], function(x) x[['cilo']]))
     s[['cilo']][s[['cilo']] < plot_min] <- plot_min
     s[['cihi']] <- unlist(lapply(s[['ci']], function(x) x[['cihi']]))
     s[['cihi']][s[['cihi']] > plot_max] <- plot_max
+    if (is.na(plot_min)) {
+        plot_min <- min(s[['cilo']], na.rm=TRUE)
+        cat(paste('plot_min', plot_min))
+    }
+    if (is.na(plot_max)) {
+        plot_max <- max(s[['cihi']], na.rm=TRUE)
+        cat(paste('plot_min', plot_min))
+    }
     s <- select(s, loc, case, doy, count, val, minval, maxval, cilo, cihi)
     levels(s$case) <- c('control', 'drought')
     h <- ggplot(s, aes(doy, val, group=case)) +
