@@ -26,7 +26,10 @@ boot_5_95 <- function(vals, R=1000) {
     return(ci)
 }
 
-df <- read.csv('./btran_daily_all.csv.gz', header=TRUE)
+df <- read.csv(file.path('/', 'global', 'cscratch1', 'sd', 'twhilton',
+                         'daily_CLM_output', 'output',
+                         'BTRAN_daily_all.csv.gz'),
+               header=TRUE)
 by_run <- group_by(select(df, case, loc, doy, value),
                    case, doy, loc)
 if (DEBUGFLAG){
