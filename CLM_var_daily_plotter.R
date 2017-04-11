@@ -26,37 +26,45 @@ boot_5_95 <- function(vals, R=1000) {
     return(ci)
 }
 
-df <- read.csv(file.path('/', 'global', 'cscratch1', 'sd', 'twhilton',
-                         'daily_CLM_output', 'output',
-                         'BTRAN_daily_all.csv.gz'),
-               header=TRUE)
-by_run <- group_by(select(df, case, loc, doy, value),
-                   case, doy, loc)
-if (DEBUGFLAG){
-    ibootstrap <- 5  ## bootstrap iterations
-} else {
-    ibootstrap <- 1000
-}
-s <- summarize(by_run,
-               count=n(),
-               BTRAN=mean(value),
-               minval=min(value),
-               maxval=max(value),
-               ci=list(boot_5_95(value, R=ibootstrap)))
-s[['cilo']] <- unlist(lapply(s[['ci']], function(x) x[['cilo']]))
-s[['cilo']][s[['cilo']] < 0.0] <- 0.0
-s[['cihi']] <- unlist(lapply(s[['ci']], function(x) x[['cihi']]))
-s[['cihi']][s[['cihi']] > 1.0] <- 1.0
-s <- select(s, loc, case, doy, count, BTRAN, minval, maxval, cilo, cihi)
-## TODO: get rid of color, use dashed lines and solid lines for
-## control/drought
+plotter <- function(varname) {
 
-levels(s$case) <- c('control', 'drought')
-h <- ggplot(s, aes(doy, BTRAN, group=case)) +
-    geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
-                fill="grey50", alpha=0.4) +
-    geom_line(aes(y = BTRAN, linetype=case)) +
-    theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
-    ylim(0.0, 1.0) + ## BTRAN varies in [0.0, 1.0]
-    facet_wrap(~ loc, ncol=3 )
-ggsave(filename='YL_BTRAN_daily.pdf')
+    fname_csv_base <- paste(varname, '_daily_all.csv.gz', sep='')
+    df <- read.csv(file.path('/', 'global', 'cscratch1', 'sd',
+                             'twhilton', 'daily_CLM_output', 'output',
+                             fname_csv_base),
+                   header=TRUE)
+    by_run <- group_by(select(df, case, loc, doy, value),
+                       case, doy, loc)
+    if (DEBUGFLAG){
+        ibootstrap <- 5  ## bootstrap iterations
+    } else {
+        ibootstrap <- 1000
+    }
+    s <- summarize(by_run,
+                   count=n(),
+                   val=mean(value),
+                   minval=min(value),
+                   maxval=max(value),
+                   ci=list(boot_5_95(value, R=ibootstrap)))
+    s[['cilo']] <- unlist(lapply(s[['ci']], function(x) x[['cilo']]))
+    s[['cilo']][s[['cilo']] < 0.0] <- 0.0
+    s[['cihi']] <- unlist(lapply(s[['ci']], function(x) x[['cihi']]))
+    s[['cihi']][s[['cihi']] > 1.0] <- 1.0
+    s <- select(s, loc, case, doy, count, val, minval, maxval, cilo, cihi)
+    ## TODO: get rid of color, use dashed lines and solid lines for
+    ## control/drought
+
+    levels(s$case) <- c('control', 'drought')
+    h <- ggplot(s, aes(doy, val, group=case)) +
+        labs(y=varname) +
+        geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
+                    fill="grey50", alpha=0.4) +
+        geom_line(aes(y = val, linetype=case)) +
+        theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
+        ylim(0.0, 1.0) + ## BTRAN varies in [0.0, 1.0]
+        facet_wrap(~ loc, ncol=3 )
+    fname <- paste(varname, '_daily_sites.pdf', sep='')
+    cat(paste('saving', fname, '...'))
+    ggsave(filename=fname)
+    cat('done\n')
+}
