@@ -100,6 +100,55 @@ class MonthlyParser(object):
     def get_moy(self):
         return self.moy
 
+class DailyVarCsvMaker(object):
+    """makes a daily-resolution CSV file for a CLM variable
+    """
+    def __init__(self, varname, runname):
+        """class constructor
+
+        ARGS:
+        varname (str): CLM variable name
+        runname (str): CLM run name
+        """
+        self.varname = varname
+        self.runname = runname
+
+    def make_csv(self, runs=['IDE_ctl', 'IDE_redpcp']):
+        """produce a CSV file for specified variable
+
+        ARGS:
+        runs (iterable): list or tuple of strings containing CLM run
+            names to process
+        """
+        sp_info = IDE_locations.CLMf05g16_get_spatial_info()
+        domain = sp_info[0]
+        locs = sp_info[1:]
+
+        df_all = None
+        for this_site in locs:
+            for this_run in runs:
+                print "parsing {} data".format(this_site.name)
+                mp = MonthlyParser(this_run,
+                                   os.path.join('/', 'global',
+                                                'cscratch1',
+                                                'sd',
+                                                'twhilton/',
+                                                'daily_CLM_output',
+                                                'output'),
+                                   '{runname}_daily_{varname}.nc'.format(
+                                       runname=this_run,
+                                       varname=self.varname),
+                                   self.varname)
+                mp.parse(loc=this_site)
+                mp.data['doy'] = mp.data.index.dayofyear
+                if df_all is None:
+                    df_all = mp.data
+                else:
+                    df_all = pd.concat((df_all, mp.data))
+        df_all.to_csv('./{varname}_daily_all.csv.gz'.format(
+            varname=self.varname),
+                      compression='gzip')
+
 
 def plot_site_annual_rain_gpp(all_vars, locs):
     """plot annual rain vs annual GPP for a site

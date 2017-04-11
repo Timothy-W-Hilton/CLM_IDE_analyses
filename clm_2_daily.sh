@@ -18,8 +18,10 @@ module load nco
 echo 'starting' `date`
 echo "$FNAME_TMP $FNAME_FINAL"
 rm -fv $FNAME_TMP $FNAME_FINAL
+# production: next line processes all data
 ncrcat -v $VARNAME $INDIR/IDE_${RUNNAME}.clm2.${HISTSUFFIX}.* $FNAME_TMP
-#ncrcat -v $VARNAME $INDIR/IDE_${RUNNAME}.clm2.h1.0001-01-0* $FNAME_TMP
+# debug: next line only uses first ten days of data
+# ncrcat -v $VARNAME $INDIR/IDE_${RUNNAME}.clm2.${HISTSUFFIX}.0001-01-0* $FNAME_TMP
 ncra -O --mro -d time,1,,4,4 $FNAME_TMP $FNAME_FINAL
 rm -fv $FNAME_TMP
 echo 'done' `date`
