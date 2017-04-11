@@ -94,3 +94,9 @@ plotter <- function(varname,
     cat('done\n')
     return(s)
 }
+
+s_per_day <- 24*60*60
+rain <- plotter('RAIN', plot_min=0.0, units='(mm/d)', units_factor=s_per_day)
+btran <- plotter('BTRAN', plot_min=0.0, plot_max=1.0)
+wt <- plotter('WT', plot_min=0.0, units='(mm)')
+fpsn <- plotter('FPSN', units='(umol/m2/s)')
