@@ -55,7 +55,7 @@ class MonthlyParser(object):
         self.varname = varname
         self.vunits = ''
 
-    def parse(self, t0=datetime(2001, 1, 1, 0, 0, 0), loc=None):
+    def parse(self, t0=datetime(2001, 1, 1, 0, 0, 0), loc=None, lev=None):
         """parse a variable and time stamp from netCDF
         """
         nc = netCDF4.Dataset(os.path.join(self.datadir, self.fname))
@@ -66,7 +66,11 @@ class MonthlyParser(object):
         if loc is None:
             self.data = nc.variables[self.varname][...]
         else:
-            data = nc.variables[self.varname][:, loc.clm_y, loc.clm_x]
+            if lev is None:
+                data = nc.variables[self.varname][:, loc.clm_y, loc.clm_x]
+            else:
+                data = nc.variables[self.varname][:, lev,
+                                                  loc.clm_y, loc.clm_x]
             self.data = pd.DataFrame(index=self.dt,
                                      data={'value': data,
                                            'date': self.dt,
@@ -100,6 +104,7 @@ class MonthlyParser(object):
     def get_moy(self):
         return self.moy
 
+
 class DailyVarCsvMaker(object):
     """makes a daily-resolution CSV file for a CLM variable
     """
@@ -113,15 +118,17 @@ class DailyVarCsvMaker(object):
         self.varname = varname
         self.runname = runname
 
-    def make_csv(self, runs=['IDE_ctl', 'IDE_redpcp']):
+    def make_csv(self, runs=['IDE_ctl', 'IDE_redpcp'], lev=None):
         """produce a CSV file for specified variable
 
         ARGS:
         runs (iterable): list or tuple of strings containing CLM run
             names to process
+        lev (int): optional vertical level to extract to CSV.  For
+            variables without vertical levels use None. Default is
+            None.
         """
         sp_info = IDE_locations.CLMf05g16_get_spatial_info()
-        domain = sp_info[0]
         locs = sp_info[1:]
 
         df_all = None
@@ -139,7 +146,7 @@ class DailyVarCsvMaker(object):
                                        runname=this_run,
                                        varname=self.varname),
                                    self.varname)
-                mp.parse(loc=this_site)
+                mp.parse(loc=this_site, lev=lev)
                 mp.data['doy'] = mp.data.index.dayofyear
                 if df_all is None:
                     df_all = mp.data
@@ -161,8 +168,8 @@ def plot_site_annual_rain_gpp(all_vars, locs):
                                     site_data['month'])
     rain_idx = site_data['var'] == 'RAIN'
     site_data.loc[rain_idx, 'annual_'] = (site_data.loc[rain_idx, 'value'] *
-                                      site_data.loc[rain_idx, 'ndays'] *
-                                      SECS_PER_DAY)
+                                          site_data.loc[rain_idx, 'ndays'] *
+                                          SECS_PER_DAY)
     fpsn_idx = site_data['var'] == 'FPSN'
     site_data.loc[fpsn_idx, 'annual_'] = carbon_umol_m2_s_2_g_m2_yr(
         site_data.loc[fpsn_idx, 'value'],
@@ -322,8 +329,8 @@ if __name__ == "__main__":
     runs = ['CTL', 'IDE']
     # TODO: H2OSOI & other variables with soil depth dimension
     h1vars = ['FPSN', 'WT', 'EFLX_LH_TOT_R', 'FCTR', 'FGEV', 'FIRA', 'FSH',
-            'FSH_V', 'H2OSNO', 'QBOT', 'QCHARGE', 'QDRAI',
-            'QINFL', 'QVEGT', 'TBOT', 'ZWT']
+              'FSH_V', 'H2OSNO', 'QBOT', 'QCHARGE', 'QDRAI',
+              'QINFL', 'QVEGT', 'TBOT', 'ZWT']
     h2vars = ['BTRAN', 'FSDS', 'QOVER', 'QRUNOFF', 'QVEGE', 'RAIN']
     sp_info = IDE_locations.CLMf05g16_get_spatial_info()
     domain = sp_info[0]
