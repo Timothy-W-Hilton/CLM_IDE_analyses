@@ -26,6 +26,30 @@ boot_5_95 <- function(vals, R=1000) {
     return(ci)
 }
 
+sitenames_reorder_factor <- function(f) {
+    ## abbreviate long site names so they fit above their plots
+    ## group sites geographically rather than alphabetically
+    f <- recode(
+        f,
+        "Sierra Foothill Research Extension Center"="Sierra Foothill REC",
+        "Loma Ridge Global Change Experiment"="Loma Ridge GCE",
+        "ARM Southern Great Plains"="ARM S. Great Plains",
+        .default=levels(f))
+    f <- factor(f, levels=c("Harvard Forest",
+                            "ARM S. Great Plains",
+                            "WLEF",
+                            "Sierra Foothill REC",
+                            "McLaughlin NRS",
+                            "Younger Lagoon",
+                            "Box Springs",
+                            "Loma Ridge GCE",
+                            "Sedgewick NRS",
+                            "Mammoth Lakes",
+                            "Carrizo Plain"))
+    return(f)
+    }
+
+
 plotter <- function(varname,
                     plot_min=NA, plot_max=NA,
                     units="", units_factor=1.0) {
@@ -72,14 +96,13 @@ plotter <- function(varname,
     s[['cihi']][s[['cihi']] > plot_max] <- plot_max
     if (is.na(plot_min)) {
         plot_min <- min(s[['cilo']], na.rm=TRUE)
-        cat(paste('plot_min', plot_min))
     }
     if (is.na(plot_max)) {
         plot_max <- max(s[['cihi']], na.rm=TRUE)
-        cat(paste('plot_min', plot_min))
     }
     s <- select(s, loc, case, doy, count, val, minval, maxval, cilo, cihi)
     levels(s$case) <- c('control', 'drought')
+    s[['loc']] <- sitenames_reorder_factor(s[['loc']])
     h <- ggplot(s, aes(doy, val, group=case)) +
         labs(y=paste(varname, units)) +
         geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
@@ -100,3 +123,5 @@ rain <- plotter('RAIN', plot_min=0.0, units='(mm/d)', units_factor=s_per_day)
 btran <- plotter('BTRAN', plot_min=0.0, plot_max=1.0)
 wt <- plotter('WT', plot_min=0.0, units='(mm)')
 fpsn <- plotter('FPSN', units='(umol/m2/s)')
+h2osoi_lev1 <- plotter('H2OSOIlev0', units='(mm3/mm3)')
+h2osoi_sum <- plotter('H2OSOIsum', units='(mm3/mm3)')
