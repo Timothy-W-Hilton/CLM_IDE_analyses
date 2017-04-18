@@ -49,6 +49,16 @@ sitenames_reorder_factor <- function(f) {
     return(f)
     }
 
+calc_annual_difference <- function(df, units_factor=1.0) {
+    ## calculate annual difference between control run, drought run
+    ##
+    ann_sum <- summarize(group_by(df, case, loc),
+                         annual_sum=sum(val * units_factor, na.rm=TRUE))
+    ann_diff <- spread(ann_sum, case, annual_sum)
+    ann_diff <- within(ann_diff, d <- control - drought)
+    ann_diff <- within(ann_diff, pct <- d / control)
+    return(ann_diff)
+}
 
 plotter <- function(varname,
                     plot_min=NA, plot_max=NA,
@@ -102,6 +112,7 @@ plotter <- function(varname,
     }
     s <- select(s, loc, case, doy, count, val, minval, maxval, cilo, cihi)
     levels(s$case) <- c('control', 'drought')
+    ann_diff <- calc_annual_difference(s)
     s[['loc']] <- sitenames_reorder_factor(s[['loc']])
     h <- ggplot(s, aes(doy, val, group=case)) +
         labs(y=paste(varname, units)) +
