@@ -112,27 +112,32 @@ plotter <- function(varname,
     }
     s <- select(s, loc, case, doy, count, val, minval, maxval, cilo, cihi)
     levels(s$case) <- c('control', 'drought')
-    ann_diff <- calc_annual_difference(s)
     s[['loc']] <- sitenames_reorder_factor(s[['loc']])
+    ann_diff <- calc_annual_difference(s)
+    ann_diff[['label']] <- paste0('Delta==', round(ann_diff[['d']]),
+                                 '~', units)
     h <- ggplot(s, aes(doy, val, group=case)) +
-        labs(y=paste(varname, units)) +
+        labs(y=paste(varname, ' (', units, ')', sep='')) +
         geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
                     fill="grey50", alpha=0.4) +
         geom_line(aes(y = val, linetype=case)) +
         theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
         ylim(plot_min, plot_max) + ## BTRAN varies in [0.0, 1.0]
-        facet_wrap(~ loc, ncol=3 )
+        facet_wrap(~ loc, ncol=3 ) +
+        geom_text(data=ann_diff,
+                  aes(x=100, y=plot_max * 0.9, label=label, group=NULL),
+                  parse=TRUE)
     fname <- paste(varname, '_daily_sites.pdf', sep='')
     cat(paste('saving', fname, '...'))
     ggsave(filename=fname)
     cat('done\n')
-    return(s)
+    return(list(annsum=s, anndiff=ann_diff))
 }
 
 s_per_day <- 24*60*60
-rain <- plotter('RAIN', plot_min=0.0, units='(mm/d)', units_factor=s_per_day)
-btran <- plotter('BTRAN', plot_min=0.0, plot_max=1.0)
-wt <- plotter('WT', plot_min=0.0, units='(mm)')
-fpsn <- plotter('FPSN', units='(umol/m2/s)')
-h2osoi_lev1 <- plotter('H2OSOIlev0', units='(mm3/mm3)')
-h2osoi_sum <- plotter('H2OSOIsum', units='(mm3/mm3)')
+rain <- plotter('RAIN', plot_min=0.0, units='mm', units_factor=s_per_day)
+## btran <- plotter('BTRAN', plot_min=0.0, plot_max=1.0)
+## wt <- plotter('WT', plot_min=0.0, units='mm')
+## fpsn <- plotter('FPSN', units='umol/m2/s')
+## h2osoi_lev1 <- plotter('H2OSOIlev0', units='mm3/mm3')
+## h2osoi_sum <- plotter('H2OSOIsum', units='mm3/mm3')
