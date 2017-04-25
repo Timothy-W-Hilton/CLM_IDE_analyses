@@ -35,7 +35,7 @@ from qian_totaller import QianTotaller
 from RegionTester.region_tester import InUSState
 from clm_domain import CLM_Domain
 from IDE_locations import CLMf05g16_get_spatial_info
-
+from world_cal_maps import WorldCalMap
 
 class CalMask(object):
     """mask to determine if a lat/lon points are within California
@@ -222,63 +222,18 @@ class QianMonthlyPCPData(object):
         """ locations: list of Location objects
         """
         frac = self.get_IDE_reduction()
-        fig = plt.figure(figsize=(12, 6))
-        ax1 = plt.subplot2grid((60, 11), (0, 0), colspan=5, rowspan=50)
-        ax2 = plt.subplot2grid((60, 11), (0, 6), colspan=5, rowspan=50)
-        ax3 = plt.subplot2grid((60, 11), (52, 0), colspan=11, rowspan=8)
-
         cmap, norm = colormap_nlevs.setup_colormap(0.0, 1.0, nlevs=11,
                                                    cmap=plt.get_cmap('YlGnBu'),
                                                    extend='neither')
-        mworld = setup_worldmap(ax1)
-        mcal = setup_calmap(ax2)
-        cm = mworld.pcolormesh(self.dlon,
-                               self.dlat,
-                               ma.masked_invalid(frac),
-                               cmap=cmap,
-                               norm=norm,
-                               latlon=True)
-        cm = mcal.pcolormesh(self.dlon,
-                             self.dlat,
-                             ma.masked_invalid(frac),
-                             cmap=cmap,
-                             norm=norm,
-                             latlon=True)
-        # draw california map boundary box on world map
-        mworld.plot(x=(mcal.llcrnrlon, mcal.llcrnrlon,
-                       mcal.urcrnrlon, mcal.urcrnrlon,
-                       mcal.llcrnrlon),
-                    y=(mcal.llcrnrlat, mcal.urcrnrlat,
-                       mcal.urcrnrlat, mcal.llcrnrlat,
-                       mcal.llcrnrlat),
-                    latlon=True,
-                    color="#d95f02",
-                    linewidth=2.0)
-        if locations is not None:
-            try:
-                for here in locations:
-                    pt = mcal.scatter(here.lon[0], here.lat[0], latlon=True,
-                                      marker='*', s=100, c='r')
-                    # ax2.annotate(s="{:0.2f}".format(frac[here.clm_y,
-                    #                                      here.clm_x]),
-                    #              xy=mcal(here.lon[0], here.lat[0]))
-                    ax2.annotate(s=here.name,
-                                 xy=mcal(here.lon[0], here.lat[0]))
-            except IndexError:
-                print('{sitename}: clm_x or clm_y'
-                      ' exceeds domain bounds'.format(
-                          sitename=here.name))
-            except:
-                print("Unexpected error:", sys.exc_info()[0])
-                raise
-        cb = plt.colorbar(cm, cax=ax3, orientation='horizontal')
-        cb.ax.set_xlabel('1948 - 2005 data: (1st percentile / 50th percentile)')
-        fig.tight_layout()
-        fig.savefig(
+        wcm = WorldCalMap()
+        wcm.plot(frac, self.dlon, self.dlat,
+                 vmin=0.0, vmax=1.0,
+                 locations=None)
+        wcm.fig.savefig(
             os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                          'IDE_pct_map_interp{}.png'.format(
                              self.lat.size != self.dlat.size)))
-        plt.close(fig)
+        plt.close(wcm.fig)
 
     def recycle_data(self, yearstart, yearend):
         """CLM spinup run used 1972-2004 Qian data, recycled to the length of
@@ -316,38 +271,6 @@ def get_f05g16_pcp(interp_flag=False):
         qd.data = qd.data_all
     qd.pcp_reduction_to_netcdf('./pcp_reduction_frac.nc')
     return qd
-
-
-def setup_calmap(ax):
-    """basic map of California with parallels, meridians, coastlines
-    """
-    m = Basemap(llcrnrlon=-125, llcrnrlat=30,
-                urcrnrlon=-112, urcrnrlat=43,
-                projection='mill',
-                resolution='h',
-                ax=ax)
-    m.drawcoastlines(linewidth=1.25)
-    m.fillcontinents(color='0.8', zorder=0)
-    m.drawparallels(np.arange(30, 44, 4), labels=[1, 0, 0, 0])
-    m.drawmeridians(np.arange(-125, -110, 5), labels=[0, 0, 0, 1])
-    m.drawstates()
-    m.drawcountries()
-    return m
-
-
-def setup_worldmap(ax):
-    """basic map of world with parallels, meridians, coastlines
-    """
-    m = Basemap(llcrnrlon=-180, llcrnrlat=-80,
-                urcrnrlon=180, urcrnrlat=80,
-                projection='mill',
-                ax=ax)
-    m.drawcoastlines(linewidth=1.25)
-    m.fillcontinents(color='0.8', zorder=0)
-    m.drawparallels(np.arange(-80, 81, 20), labels=[0, 1, 0, 0])
-    m.drawmeridians(np.arange(0, 360, 60), labels=[0, 0, 0, 1])
-    return m
-
 
 def check_results(qd, dlon, dlat):
     fig, ax = plt.subplots(2, 1, figsize=(8.5, 11))
