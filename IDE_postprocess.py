@@ -152,8 +152,12 @@ class DailyVarCsvMaker(object):
                     df_all = mp.data
                 else:
                     df_all = pd.concat((df_all, mp.data))
+        if lev is not None:
+            suffix = "_{:02d}".format(lev)
+        else:
+            suffix = ""
         df_all.to_csv('./{varname}_daily_all.csv.gz'.format(
-            varname=self.varname),
+            varname=self.varname + suffix),
                       compression='gzip')
 
 
