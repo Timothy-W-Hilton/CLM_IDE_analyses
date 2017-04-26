@@ -228,7 +228,9 @@ class QianMonthlyPCPData(object):
         wcm = WorldCalMap()
         wcm.plot(frac, self.dlon, self.dlat,
                  vmin=0.0, vmax=1.0,
-                 locations=None)
+                 locations=None,
+                 cbar_tstr=('1948 - 2005 data: '
+                            '(1st percentile / 50th percentile)'))
         wcm.fig.savefig(
             os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                          'IDE_pct_map_interp{}.png'.format(

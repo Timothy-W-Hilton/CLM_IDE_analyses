@@ -69,7 +69,8 @@ class WorldCalMap(object):
              cmap_arg=plt.get_cmap('YlGnBu'),
              nlevs=11,
              vmin=0.0, vmax=1.0,
-             locations=None):
+             locations=None,
+             cbar_tstr=None):
         """ locations: list of Location objects
         """
 
@@ -105,8 +106,8 @@ class WorldCalMap(object):
                 print("Unexpected error:", sys.exc_info()[0])
                 raise
         cb = plt.colorbar(cm, cax=self.ax3, orientation='horizontal')
-        cb.ax.set_xlabel(
-            '1948 - 2005 data: (1st percentile / 50th percentile)')
+        if cbar_tstr is not None:
+            cb.ax.set_xlabel(cbar_tstr)
         self.fig.tight_layout()
 
         # self.fig.savefig(
