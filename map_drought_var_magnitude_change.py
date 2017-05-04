@@ -68,9 +68,13 @@ if __name__ == "__main__":
     wcm_mag.plot(data=d_mag,
                  lon=varobjs['ctl'].lon,
                  lat=varobjs['ctl'].lat,
-                 vmin=d_mag.min(), vmax=d_mag.min() * -1.0,
+                 vmin=d_mag.min(), vmax=5.0,
+                 midpoint=0.0,
+                 bands_above=2,
+                 bands_below=8,
                  cmap_arg=plt.get_cmap('PuOr'),
-                 cbar_tstr=r'$\Delta$ annual max (drought - control)',
+                 cbar_tstr=(r'$\Delta$ annual max (drought - control)'
+                            ' [$\mu$mol m$^{-2}$ s$^{-1}$]'),
                  locations=locs)
     wcm_mag.fig.savefig('FPSN_Delta_ann_max.png')
 
@@ -78,9 +82,13 @@ if __name__ == "__main__":
     wcm_mag_pct.plot(data=d_mag_pct,
                      lon=varobjs['ctl'].lon,
                      lat=varobjs['ctl'].lat,
-                     vmin=-200.0, vmax=200.0,
+                     vmin=-100.0, vmax=25.0,
+                     midpoint=0.0,
+                     bands_above=3,
+                     bands_below=10,
                      cmap_arg=plt.get_cmap('PuOr'),
-                     cbar_tstr=r'$\% \Delta$ annual max (drought - controll)',
+                     cbar_tstr=(r'percent $\Delta$ annual max'
+                                ' (drought - controll)'),
                      locations=locs)
     wcm_mag_pct.fig.savefig('FPSN_PctDelta_ann_max.png')
 
@@ -88,9 +96,11 @@ if __name__ == "__main__":
     wcm_doy.plot(data=d_doy,
                  lon=varobjs['ctl'].lon,
                  lat=varobjs['ctl'].lat,
-                 vmin=-30, vmax=30,
+                 vmin=-50, vmax=50,
+                 bands_above=7,
+                 bands_below=7,
                  cmap_arg=plt.get_cmap('PuOr'),
-                 cbar_tstr=r'$\Delta$ DOY max (drought - control)',
+                 cbar_tstr=r'$\Delta$ DOY max (drought - control) [days]',
                  locations=locs)
     wcm_doy.fig.savefig('FPSN_DeltaDOY_ann_max.png')
 

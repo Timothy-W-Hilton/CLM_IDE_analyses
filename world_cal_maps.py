@@ -4,8 +4,7 @@ import numpy as np
 from numpy import ma
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
-from timutils import colormap_nlevs
-
+from timutils import midpt_norm
 
 def setup_calmap(ax):
     """basic map of California with parallels, meridians, coastlines
@@ -67,7 +66,9 @@ class WorldCalMap(object):
 
     def plot(self, data, lon, lat,
              cmap_arg=plt.get_cmap('YlGnBu'),
-             nlevs=11,
+             midpoint=0.0,
+             bands_above=5,
+             bands_below=5,
              vmin=0.0, vmax=1.0,
              locations=None,
              cbar_tstr=None,
@@ -75,10 +76,13 @@ class WorldCalMap(object):
         """ locations: list of Location objects
         """
 
-        cmap, norm = colormap_nlevs.setup_colormap(vmin, vmax,
-                                                   nlevs=11,
-                                                   cmap=cmap_arg,
-                                                   extend=extend)
+        cmap, norm = midpt_norm.get_discrete_midpt_cmap_norm(
+            vmin, vmax,
+            midpoint=midpoint,
+            bands_above_mdpt=bands_above,
+            bands_below_mdpt=bands_below,
+            this_cmap=cmap_arg,
+            extend=extend)
         for this_map in (self.mworld, self.mcal):
             cm = this_map.pcolormesh(lon,
                                      lat,
