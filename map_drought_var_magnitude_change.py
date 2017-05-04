@@ -3,6 +3,7 @@
 import os
 import netCDF4
 import numpy as np
+import matplotlib.pyplot as plt
 from world_cal_maps import WorldCalMap
 from IDE_locations import CLMf05g16_get_spatial_info
 
@@ -59,7 +60,7 @@ if __name__ == "__main__":
              varobjs['ctl'].get_annual_max())
     d_mag_pct = ((varobjs['redpcp'].get_annual_max() -
                  varobjs['ctl'].get_annual_max()) /
-                 varobjs['ctl'].get_annual_max())
+                 varobjs['ctl'].get_annual_max()) * 100.0
     d_doy = (varobjs['redpcp'].get_annual_max_DOY() -
              varobjs['ctl'].get_annual_max_DOY())
 
@@ -67,22 +68,32 @@ if __name__ == "__main__":
     wcm_mag.plot(data=d_mag,
                  lon=varobjs['ctl'].lon,
                  lat=varobjs['ctl'].lat,
-                 vmin=d_mag.min(), vmax=d_mag.max(),
-                 cbar_tstr=r'$\Delta$ annual max',
+                 vmin=d_mag.min(), vmax=d_mag.min() * -1.0,
+                 cmap_arg=plt.get_cmap('PuOr'),
+                 cbar_tstr=r'$\Delta$ annual max (drought - control)',
                  locations=locs)
+    wcm_mag.fig.savefig('FPSN_Delta_ann_max.png')
 
     wcm_mag_pct = WorldCalMap()
     wcm_mag_pct.plot(data=d_mag_pct,
                      lon=varobjs['ctl'].lon,
                      lat=varobjs['ctl'].lat,
-                     vmin=-2.0, vmax=2.0,
-                     cbar_tstr=r'$\% \Delta$ annual max',
+                     vmin=-200.0, vmax=200.0,
+                     cmap_arg=plt.get_cmap('PuOr'),
+                     cbar_tstr=r'$\% \Delta$ annual max (drought - controll)',
                      locations=locs)
+    wcm_mag_pct.fig.savefig('FPSN_PctDelta_ann_max.png')
 
     wcm_doy = WorldCalMap()
     wcm_doy.plot(data=d_doy,
                  lon=varobjs['ctl'].lon,
                  lat=varobjs['ctl'].lat,
-                 vmin=-20, vmax=20,
-                 cbar_tstr=r'$\Delta$ DOY',
+                 vmin=-30, vmax=30,
+                 cmap_arg=plt.get_cmap('PuOr'),
+                 cbar_tstr=r'$\Delta$ DOY max (drought - control)',
                  locations=locs)
+    wcm_doy.fig.savefig('FPSN_DeltaDOY_ann_max.png')
+
+    fig = plt.figure()
+    plt.plot(varobjs['redpcp'].data[:, locs[-1].clm_y, locs[-1].clm_x])
+    plt.plot(varobjs['ctl'].data[:, locs[-1].clm_y, locs[-1].clm_x])

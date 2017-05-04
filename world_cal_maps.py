@@ -70,14 +70,15 @@ class WorldCalMap(object):
              nlevs=11,
              vmin=0.0, vmax=1.0,
              locations=None,
-             cbar_tstr=None):
+             cbar_tstr=None,
+             extend='both'):
         """ locations: list of Location objects
         """
 
         cmap, norm = colormap_nlevs.setup_colormap(vmin, vmax,
                                                    nlevs=11,
                                                    cmap=cmap_arg,
-                                                   extend='neither')
+                                                   extend=extend)
         for this_map in (self.mworld, self.mcal):
             cm = this_map.pcolormesh(lon,
                                      lat,
