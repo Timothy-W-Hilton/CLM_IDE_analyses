@@ -262,10 +262,11 @@ class QianMonthlyPCPData(object):
         cb = plt.colorbar(cm, cax=ax3, orientation='horizontal')
         cb.ax.set_xlabel('1948 - 2005 data: (1st percentile / 50th percentile)')
         fig.tight_layout()
-        fig.savefig(
-            os.path.join(os.getenv('HOME'), 'plots', 'maptest',
+        fname = os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                          'IDE_pct_map_interp{}.png'.format(
-                             self.lat.size != self.dlat.size)))
+                             self.lat.size != self.dlat.size))
+        fig.savefig(fname)
+        print "saved {}".format(fname)
         plt.close(fig)
 
     def recycle_data(self, yearstart, yearend):
@@ -387,6 +388,7 @@ def create_reduced_pcp():
     qd = get_f05g16_data(interp_flag=False)
     frac = qd.get_IDE_reduction()
     qt = QianTotaller(
+        varname='PRECTmms',
         data_dir=os.path.join('/', 'project', 'projectdirs',
                               'ccsm1', 'inputdata', 'atm', 'datm7',
                               'atm_forcing.datm7.Qian.T62.c080727',
@@ -407,7 +409,8 @@ def create_reduced_pcp():
         print "wrote {}".format(new_name)
 
 def get_reduced_pcp_annual_totals():
-    qt_red = QianTotaller(data_dir=os.path.join(os.getenv('SCRATCH'),
+    qt_red = QianTotaller(varname='PRECTmms',
+                          data_dir=os.path.join(os.getenv('SCRATCH'),
                                                 'Qian_pcp_reduced'),
                           output_dir=os.getenv('SCRATCH'),
                           output_fname='reduced_pcp_total_TEST.nc')
@@ -419,13 +422,13 @@ if __name__ == "__main__":
     qd = get_f05g16_pcp(interp_flag=False)
     qdi = get_f05g16_pcp(interp_flag=True)
 
-    (domain_f05_g16, santacruz, mclaughlin,
-     sierra_foothills, loma_ridge, sedgewick,
-     boxsprings, ARM_SGP, harvard, wlef) = CLMf05g16_get_spatial_info()
+    (domain_f05_g16, santacruz, mclaughlin, sierra_foothills,
+     loma_ridge, sedgewick, boxsprings, ARM_SGP, harvard, wlef,
+     mammoth_lakes, carrizo_plain) = CLMf05g16_get_spatial_info()
     qd.show_reduction_pct((santacruz, mclaughlin,
                            sierra_foothills, loma_ridge,
                            sedgewick, boxsprings))
-    get_reduced_pcp_annual_totals()  # needs interp_flat=False
+    # get_reduced_pcp_annual_totals()  # needs interp_flat=False
 
     # for this_site in (santacruz, mclaughlin, sierra_foothills,
     #                   loma_ridge, sedgewick, boxsprings, ARM_SGP):
