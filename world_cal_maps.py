@@ -47,9 +47,10 @@ class WorldCalMap(object):
         self.interp = interp
 
         self.fig = plt.figure(figsize=(12, 6))
-        self.ax1 = plt.subplot2grid((60, 11), (0, 0), colspan=5, rowspan=50)
-        self.ax2 = plt.subplot2grid((60, 11), (0, 6), colspan=5, rowspan=50)
-        self.ax3 = plt.subplot2grid((60, 11), (52, 0), colspan=11, rowspan=8)
+        self.ax1 = plt.subplot2grid((60, 110), (0, 0), colspan=50, rowspan=50)
+        self.ax2 = plt.subplot2grid((60, 110), (0, 53), colspan=50, rowspan=50)
+        self.ax3 = plt.subplot2grid((60, 110), (52, 0),
+                                    colspan=100, rowspan=10)
 
         self.mworld = setup_worldmap(self.ax1)
         self.mcal = setup_calmap(self.ax2)
