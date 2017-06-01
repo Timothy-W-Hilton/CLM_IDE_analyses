@@ -218,7 +218,7 @@ class QianMonthlyPCPData(object):
             'al (2006) 1948-2004 precipitation')
         nc.close()
 
-    def show_reduction_pct(self, locations=None):
+    def show_reduction_pct(self, locations=None, label_reduction=False):
         """ locations: list of Location objects
         """
         frac = self.get_IDE_reduction()
@@ -249,9 +249,10 @@ class QianMonthlyPCPData(object):
                 for here in locations:
                     pt = mcal.scatter(here.lon[0], here.lat[0], latlon=True,
                                       marker='*', s=100, c='r')
-                    ax2.annotate(s="{:0.2f}".format(frac[here.clm_y,
-                                                         here.clm_x]),
-                                 xy=mcal(here.lon[0], here.lat[0]))
+                    if label_reduction:
+                        ax2.annotate(s="{:0.2f}".format(frac[here.clm_y,
+                                                             here.clm_x]),
+                                     xy=mcal(here.lon[0], here.lat[0]))
             except IndexError:
                 print('{sitename}: clm_x or clm_y'
                       ' exceeds domain bounds'.format(
@@ -260,10 +261,10 @@ class QianMonthlyPCPData(object):
                 print("Unexpected error:", sys.exc_info()[0])
                 raise
         cb = plt.colorbar(cm, cax=ax3, orientation='horizontal')
-        cb.ax.set_xlabel('1948 - 2005 data: (1st percentile / 50th percentile)')
+        cb.ax.set_xlabel('fractional precipitation reduction')
         fig.tight_layout()
         fname = os.path.join(os.getenv('HOME'), 'plots', 'maptest',
-                         'IDE_pct_map_interp{}.png'.format(
+                             'IDE_pct_map_interp{}.png'.format(
                              self.lat.size != self.dlat.size))
         fig.savefig(fname)
         print "saved {}".format(fname)
@@ -425,9 +426,9 @@ if __name__ == "__main__":
     (domain_f05_g16, santacruz, mclaughlin, sierra_foothills,
      loma_ridge, sedgewick, boxsprings, ARM_SGP, harvard, wlef,
      mammoth_lakes, carrizo_plain) = CLMf05g16_get_spatial_info()
-    qd.show_reduction_pct((santacruz, mclaughlin,
-                           sierra_foothills, loma_ridge,
-                           sedgewick, boxsprings))
+    qdi.show_reduction_pct((santacruz, mclaughlin,
+                            sierra_foothills, loma_ridge,
+                            sedgewick, boxsprings))
     # get_reduced_pcp_annual_totals()  # needs interp_flat=False
 
     # for this_site in (santacruz, mclaughlin, sierra_foothills,
