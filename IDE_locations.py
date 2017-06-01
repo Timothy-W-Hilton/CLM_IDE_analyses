@@ -16,10 +16,10 @@ def CLMf05g16_get_spatial_info():
     mclaughlin = Location((-122.431667, ), (38.873889, ), 'McLaughlin NRS')
     mclaughlin.get_clm_xy(domain_f05_g16)
     sierra_foothills = Location((-121.311623, ), (39.249407, ),
-                                'Sierra Foothill Research Extension Center')
+                                'Sierra Foothill R.E.C.')
     sierra_foothills.get_clm_xy(domain_f05_g16)
     loma_ridge = Location((-117.7, ), (33.74, ),
-                          'Loma Ridge Global Change Experiment')
+                          'Loma Ridge G.C.E.')
     loma_ridge.get_clm_xy(domain_f05_g16)
     ARM_SGP = Location((-97.4888, ), (36.6058, ),
                        'ARM Southern Great Plains')
