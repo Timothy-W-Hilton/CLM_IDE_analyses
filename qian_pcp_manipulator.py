@@ -236,7 +236,7 @@ class QianMonthlyPCPData(object):
                  locations=locations,
                  cbar_tstr=('proportional precipitation reduction'),
                  site_labels=site_labels)
-        wcm.fig.savefig(
+        wcm.label_crop_save(
             os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                              'IDE_pct_map_interp{}.png'.format(
                              self.lat.size != self.dlat.size)))

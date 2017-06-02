@@ -2,9 +2,11 @@ import sys
 import os
 import numpy as np
 from numpy import ma
+from PIL import Image  # to overlay site labels, crop
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 from timutils import midpt_norm
+
 
 def setup_calmap(ax):
     """basic map of California with parallels, meridians, coastlines
@@ -126,3 +128,28 @@ class WorldCalMap(object):
         #                  'IDE_pct_map_interp{}.png'.format(
         #                      self.lat.size != self.dlat.size)))
         # plt.close(self.fig)
+
+    def label_crop_save(self, fname_image, fname_labels=None):
+        """overlay site name labels, crop out whitespace
+
+        fname_labels (str): full path to png image containing labels
+            (default is ./site_labels.png'
+        """
+
+        if fname_labels is None:
+            fname_labels = './site_labels.png'
+
+        self.fig.savefig('tmp.png')
+
+        map_image = Image.open("tmp.png")
+        labels_image = Image.open(fname_labels)
+        final_image = Image.new("RGBA", map_image.size)
+        # 1080, 576, 11, 14
+        # left upper right lower
+        final_image = Image.alpha_composite(final_image, map_image)
+        final_image = Image.alpha_composite(final_image, labels_image)
+        final_image = final_image.crop((10, 13, 1090, 587))
+        final_image.save(fname_image)
+        map_image.close()
+        labels_image.close()
+        os.remove("tmp.png")
