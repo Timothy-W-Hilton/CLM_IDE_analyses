@@ -73,7 +73,8 @@ class WorldCalMap(object):
              vmin=0.0, vmax=1.0,
              locations=None,
              cbar_tstr=None,
-             extend='both'):
+             extend='both',
+             site_labels=None):
         """ locations: list of Location objects
         """
 
@@ -99,11 +100,15 @@ class WorldCalMap(object):
                     pt = self.mcal.scatter(here.lon[0], here.lat[0],
                                            latlon=True,
                                            marker='*', s=100, c='r')
-                    # ax2.annotate(s="{:0.2f}".format(data[here.clm_y,
-                    #                                      here.clm_x]),
-                    #              xy=mcal(here.lon[0], here.lat[0]))
-                    self.ax2.annotate(s=here.name,
-                                      xy=self.mcal(here.lon[0], here.lat[0]))
+                    if site_labels is "fraction":
+                        self.ax2.annotate(s="{:0.2f}".format(data[here.clm_y,
+                                                                  here.clm_x]),
+                                          xy=self.mcal(here.lon[0],
+                                                       here.lat[0]))
+                    elif site_labels is "names":
+                        self.ax2.annotate(s=here.name,
+                                          xy=self.mcal(here.lon[0],
+                                                       here.lat[0]))
             except IndexError:
                 print('{sitename}: clm_x or clm_y'
                       ' exceeds domain bounds'.format(

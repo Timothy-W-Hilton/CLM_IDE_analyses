@@ -218,8 +218,9 @@ class QianMonthlyPCPData(object):
             'al (2006) 1948-2004 precipitation')
         nc.close()
 
-    def show_reduction_pct(self, locations=None, label_reduction=False):
+    def show_reduction_pct(self, locations=None, site_labels=None):
         """ locations: list of Location objects
+            site_labels ("fraction" | "names"): switch to turn on labeling of the markers of the sites specified by argument locations.  If "fraction", sites are labeled with their fractional precipitation reduction; if "names", they are labeled with teh location name.
         """
         frac = self.get_IDE_reduction()
         cmap, norm = colormap_nlevs.setup_colormap(0.0, 1.0, nlevs=11,
@@ -233,7 +234,8 @@ class QianMonthlyPCPData(object):
                  bands_below=6,
                  extend='neither',
                  locations=locations,
-                 cbar_tstr=('proportional precipitation reduction'))
+                 cbar_tstr=('proportional precipitation reduction'),
+                 site_labels=site_labels)
         wcm.fig.savefig(
             os.path.join(os.getenv('HOME'), 'plots', 'maptest',
                              'IDE_pct_map_interp{}.png'.format(
@@ -367,7 +369,8 @@ if __name__ == "__main__":
     qdi.show_reduction_pct((santacruz, mclaughlin, sierra_foothills,
                             loma_ridge, sedgewick, boxsprings, ARM_SGP,
                             harvard, wlef, mammoth_lakes,
-                            carrizo_plain))
+                            carrizo_plain),
+                           site_labels=None)
     # get_reduced_pcp_annual_totals()  # needs interp_flat=False
 
     # for this_site in (santacruz, mclaughlin, sierra_foothills,
