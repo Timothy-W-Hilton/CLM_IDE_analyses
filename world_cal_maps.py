@@ -3,6 +3,7 @@ import os
 import numpy as np
 from numpy import ma
 from PIL import Image  # to overlay site labels, crop
+import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 from timutils import midpt_norm
@@ -45,6 +46,7 @@ class WorldCalMap(object):
     def __init__(self, figsize=(12, 6), interp=False):
         """class constructor
         """
+        matplotlib.rcParams.update({'font.size': 14})
         self.figsize = figsize
         self.interp = interp
 
@@ -148,7 +150,7 @@ class WorldCalMap(object):
         # left upper right lower
         final_image = Image.alpha_composite(final_image, map_image)
         final_image = Image.alpha_composite(final_image, labels_image)
-        final_image = final_image.crop((10, 13, 1090, 587))
+        final_image = final_image.crop((0, 13, 1075, 587))
         final_image.save(fname_image, dpi=dpi)
         map_image.close()
         labels_image.close()
