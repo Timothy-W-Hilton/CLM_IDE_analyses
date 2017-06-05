@@ -129,7 +129,7 @@ class WorldCalMap(object):
         #                      self.lat.size != self.dlat.size)))
         # plt.close(self.fig)
 
-    def label_crop_save(self, fname_image, fname_labels=None):
+    def label_crop_save(self, fname_image, fname_labels=None, dpi=(300, 300)):
         """overlay site name labels, crop out whitespace
 
         fname_labels (str): full path to png image containing labels
@@ -149,7 +149,7 @@ class WorldCalMap(object):
         final_image = Image.alpha_composite(final_image, map_image)
         final_image = Image.alpha_composite(final_image, labels_image)
         final_image = final_image.crop((10, 13, 1090, 587))
-        final_image.save(fname_image)
+        final_image.save(fname_image, dpi=dpi)
         map_image.close()
         labels_image.close()
         os.remove("tmp.png")
