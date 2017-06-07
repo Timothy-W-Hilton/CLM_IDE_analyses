@@ -138,16 +138,22 @@ plotter <- function(s,
     return(s)
 }
 
-do_bootstrap <- FALSE
+do_bootstrap <- TRUE
 if (do_bootstrap) {
     s_btran <- bootstrapper('BTRAN')
     s_FPSN <- bootstrapper('FPSN')
+    s_rain <- bootstrapper('RAIN')
+    s_wt <- bootstrapper('WT')
+    s_h2osoi_lev1 <- bootstrapper('H2OSOIlev00')
+    h2osoi_sum <- bootstrapper('H2OSOIsum')
 }
 
 s_per_day <- 24*60*60
 btran <- plotter(s_btran, 'BTRAN', plot_min=0.0, plot_max=1.0)
-## fpsn <- plotter('FPSN', units='(umol/m2/s)')
-## rain <- plotter('RAIN', plot_min=0.0, units='(mm/d)', units_factor=s_per_day)
-## wt <- plotter('WT', plot_min=0.0, units='(mm)')
-## h2osoi_lev1 <- plotter('H2OSOIlev0', units='(mm3/mm3)')
-## h2osoi_sum <- plotter('H2OSOIsum', units='(mm3/mm3)')
+fpsn <- plotter(s_FPSN, 'FPSN', units='(umol/m2/s)')
+
+rain <- plotter(s_rain, 'RAIN', plot_min=0.0, units='(mm/d)',
+                units_factor=s_per_day)
+wt <- plotter(s_wt, 'WT', plot_min=0.0, units='(mm)')
+h2osoi_lev1 <- plotter(s_h2osoi_lev1, 'H2OSOIlev0', units='(mm3/mm3)')
+h2osoi_sum <- plotter(h2osoi_sum, 'H2OSOIsum', units='(mm3/mm3)')
