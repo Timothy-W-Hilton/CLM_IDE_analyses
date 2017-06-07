@@ -113,7 +113,7 @@ plotter <- function(s,
     levels(s$case) <- c('control', 'drought')
     s[['loc']] <- sitenames_reorder_factor(s[['loc']])
     h <- ggplot(s, aes(doy, val, group=case)) +
-        labs(y=paste(varname, units)) +
+        labs(y=paste(varname, units), x='Day of Year') +
         geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
                     fill="grey50", alpha=0.4) +
         geom_line(aes(y = val, linetype=case)) +
