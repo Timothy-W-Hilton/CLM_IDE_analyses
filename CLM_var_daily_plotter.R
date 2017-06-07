@@ -52,27 +52,7 @@ sitenames_reorder_factor <- function(f) {
     }
 
 
-plotter <- function(varname,
-                    plot_min=NA, plot_max=NA,
-                    units="", units_factor=1.0) {
-    ## plot daily CLM variable with 95% CI envelope, one panel per site
-    ##
-    ## ARGS:
-    ##  varname (string): name of variable to be plotted
-    ##  plot_min (float): vertical axis minimum (default is min(95%
-    ##      confidence interval)
-    ##  plot_max (float): vertical axis maximum (default is max(95%
-    ##      confidence interval)
-    ##  units (string): units, to be appended to vertical axis label
-    ##  units_factor (float): units conversion factor to be multiplied
-    ##      into requested variable.  Default is 1.0.
-    ##
-    ## RETURNS:
-    ##  data frame containing daily values, labeled by site
-
-    ## TODO: min, max vals should be arguments
-    ## TODO: where to put scale factor?  Argument here, or in shell
-    ## script that builds daily netcdf files?
+bootstrapper <- function(varname, units_factor=1.0) {
     fname_csv_base <- paste(varname, '_daily_all.csv.gz', sep='')
     df <- read.csv(file.path('/', 'global', 'cscratch1', 'sd',
                              'twhilton', 'daily_CLM_output', 'output',
@@ -92,6 +72,33 @@ plotter <- function(varname,
                    minval=min(value),
                    maxval=max(value),
                    ci=list(boot_5_95(value, R=ibootstrap)))
+    return(s)
+}
+
+plotter <- function(s,
+                    varname,
+                    plot_min=NA, plot_max=NA,
+                    units="", units_factor=1.0) {
+    ## plot daily CLM variable with 95% CI envelope, one panel per site
+    ##
+    ## ARGS:
+    ##  s: summary of bootstrap returned by bootstrapper()
+    ##  varname (string): name of variable to be plotted
+    ##  plot_min (float): vertical axis minimum (default is min(95%
+    ##      confidence interval)
+    ##  plot_max (float): vertical axis maximum (default is max(95%
+    ##      confidence interval)
+    ##  units (string): units, to be appended to vertical axis label
+    ##  units_factor (float): units conversion factor to be multiplied
+    ##      into requested variable.  Default is 1.0.
+    ##
+    ## RETURNS:
+    ##  data frame containing daily values, labeled by site
+
+    ## TODO: min, max vals should be arguments
+    ## TODO: where to put scale factor?  Argument here, or in shell
+    ## script that builds daily netcdf files?
+
     s[['cilo']] <- unlist(lapply(s[['ci']], function(x) x[['cilo']]))
     s[['cilo']][s[['cilo']] < plot_min] <- plot_min
     s[['cihi']] <- unlist(lapply(s[['ci']], function(x) x[['cihi']]))
@@ -120,10 +127,16 @@ plotter <- function(varname,
     return(s)
 }
 
+do_bootstrap <- FALSE
+if (do_bootstrap) {
+    s_btran <- bootstrapper('BTRAN')
+    s_FPSN <- bootstrapper('FPSN')
+}
+
 s_per_day <- 24*60*60
-rain <- plotter('RAIN', plot_min=0.0, units='(mm/d)', units_factor=s_per_day)
-btran <- plotter('BTRAN', plot_min=0.0, plot_max=1.0)
-wt <- plotter('WT', plot_min=0.0, units='(mm)')
-fpsn <- plotter('FPSN', units='(umol/m2/s)')
-h2osoi_lev1 <- plotter('H2OSOIlev0', units='(mm3/mm3)')
-h2osoi_sum <- plotter('H2OSOIsum', units='(mm3/mm3)')
+btran <- plotter(s_btran, 'BTRAN', plot_min=0.0, plot_max=1.0)
+## fpsn <- plotter('FPSN', units='(umol/m2/s)')
+## rain <- plotter('RAIN', plot_min=0.0, units='(mm/d)', units_factor=s_per_day)
+## wt <- plotter('WT', plot_min=0.0, units='(mm)')
+## h2osoi_lev1 <- plotter('H2OSOIlev0', units='(mm3/mm3)')
+## h2osoi_sum <- plotter('H2OSOIsum', units='(mm3/mm3)')
