@@ -75,6 +75,17 @@ bootstrapper <- function(varname, units_factor=1.0) {
     return(s)
 }
 
+vert_axis_label_builder <- function(varname, units) {
+    ## build axis label for vertical axis
+    if (varname == 'FPSN') {
+        return(parse(text='GPP~(mu*mol~m^-2~s^-1)'))
+    } else if (varname == 'BTRAN') {
+        return(parse(text='beta[t]'))
+    } else {
+        return(paste(varname, units))
+    }
+}
+
 plotter <- function(s,
                     varname,
                     plot_min=NA, plot_max=NA,
@@ -113,7 +124,7 @@ plotter <- function(s,
     levels(s$case) <- c('control', 'drought')
     s[['loc']] <- sitenames_reorder_factor(s[['loc']])
     h <- ggplot(s, aes(doy, val, group=case)) +
-        labs(y=paste(varname, units), x='Day of Year') +
+        labs(y=vert_axis_label_builder(varname, units), x='Day of Year') +
         geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
                     fill="grey50", alpha=0.4) +
         geom_line(aes(y = val, linetype=case)) +
