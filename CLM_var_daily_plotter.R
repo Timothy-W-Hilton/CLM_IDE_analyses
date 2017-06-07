@@ -31,19 +31,21 @@ sitenames_reorder_factor <- function(f) {
     ## group sites geographically rather than alphabetically
     f <- recode(
         f,
-        "Sierra Foothill Research Extension Center"="Sierra Foothill REC",
-        "Loma Ridge Global Change Experiment"="Loma Ridge GCE",
+        "Sierra Foothill Research Extension Center"="Sierra Foothill",
+        "Loma Ridge Global Change Experiment"="Loma Ridge",
         "ARM Southern Great Plains"="ARM S. Great Plains",
+        "McLaughlin NRS"="McLaughlin",
+        "Sedgewick NRS"="Sedgwick",
         .default=levels(f))
     f <- factor(f, levels=c("Harvard Forest",
                             "ARM S. Great Plains",
                             "WLEF",
-                            "Sierra Foothill REC",
-                            "McLaughlin NRS",
+                            "Sierra Foothill",
+                            "McLaughlin",
                             "Younger Lagoon",
                             "Box Springs",
-                            "Loma Ridge GCE",
-                            "Sedgewick NRS",
+                            "Loma Ridge",
+                            "Sedgwick",
                             "Mammoth Lakes",
                             "Carrizo Plain"))
     return(f)
