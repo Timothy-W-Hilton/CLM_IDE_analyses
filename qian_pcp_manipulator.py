@@ -234,7 +234,8 @@ class QianMonthlyPCPData(object):
                  bands_below=6,
                  extend='neither',
                  locations=locations,
-                 cbar_tstr=('proportional precipitation reduction'),
+                 cbar_tstr=((u'drought simulation precipitation as fraction '
+                             u'of 1948\u20132004 annual mean precipitation')),
                  site_labels=site_labels)
         wcm.label_crop_save(
             os.path.join(os.getenv('HOME'), 'plots', 'maptest',

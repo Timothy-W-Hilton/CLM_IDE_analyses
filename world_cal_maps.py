@@ -53,8 +53,8 @@ class WorldCalMap(object):
         self.fig = plt.figure(figsize=(12, 6))
         self.ax1 = plt.subplot2grid((60, 110), (0, 0), colspan=50, rowspan=50)
         self.ax2 = plt.subplot2grid((60, 110), (0, 53), colspan=50, rowspan=50)
-        self.ax3 = plt.subplot2grid((60, 110), (52, 0),
-                                    colspan=100, rowspan=10)
+        self.ax3 = plt.subplot2grid((60, 110), (52, 4),
+                                    colspan=90, rowspan=10)
 
         self.mworld = setup_worldmap(self.ax1)
         self.mcal = setup_calmap(self.ax2)
