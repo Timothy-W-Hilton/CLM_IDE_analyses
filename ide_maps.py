@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import netCDF4
 from timutils import midpt_norm
 from world_cal_maps import WorldCalMap
+from IDE_locations import CLMf05g16_get_spatial_info
 
 
 def parse_inflection_points(fname):
@@ -56,6 +57,9 @@ def fix_longitudes(lons):
 
 
 if __name__ == "__main__":
+    sp_info = CLMf05g16_get_spatial_info()
+    domain = sp_info[0]
+    locs = sp_info[1:]
     infl_rats, lon, lat = parse_inflection_points('hyperbola_fits.nc')
     print "parsed inflection points"
     lon = fix_longitudes(lon)
@@ -70,10 +74,14 @@ if __name__ == "__main__":
              midpoint=1.0,
              bands_above=6,
              bands_below=6,
+             # ratios are positive definite, so can't have vals < 0.
+             # Therefore only extend high end of colorbar
+             extend='max',
              # \u2013 is unicode en dash
              cbar_tstr=(u'(annual pcp at GPP\u2013pcp slope change) / '
                         u'(1948\u20132004 annual mean pcp)'),
-             cmap_arg=my_cmap)
+             cmap_arg=my_cmap,
+             locations=locs)
     print "drew maps"
     wcm.label_crop_save("PCP_GPP_ratio_map.png")
     print "overlaid labels, etc."
