@@ -186,6 +186,14 @@ def plot_site_annual_rain_gpp(all_vars, locs):
                       suffixes=g.keys())
     anntot.loc[anntot['case'] == 'IDE', 'case'] = "drought"
     anntot.loc[anntot['case'] == 'CTL', 'case'] = "control"
+    anntot.loc[anntot['loc'] == ('Loma Ridge '
+                                 'Global Change'
+                                 ' Experiment'), 'loc'] = "Loma Ridge"
+    anntot.loc[anntot['loc'] == 'McLaughlin NRS', 'loc'] = "McLaughlin"
+    anntot.loc[anntot['loc'] == 'Sedgewick NRS', 'loc'] = "Sedgwick"
+    anntot.loc[anntot['loc'] == ('Sierra Foothill'
+                                 ' Research Extension'
+                                 ' Center'), 'loc'] = "Sierra Foothill"
     anntot.drop(['varFPSN', 'varRAIN'], axis=1, inplace=True)
     anntot = anntot.rename(columns={'locRAIN': 'loc'})
     # reorder from wet to dry
@@ -341,10 +349,10 @@ if __name__ == "__main__":
     locs = sp_info[1:]
 
     cal_wet_to_dry = ['McLaughlin NRS',
-                      'Sierra Foothill Research Extension Center',
+                      'Sierra Foothill R.E.C.',
                       'Younger Lagoon',
                       'Sedgewick NRS',
-                      'Loma Ridge Global Change Experiment',
+                      'Loma Ridge G.C.E.',
                       'Box Springs',
                       'Mammoth Lakes']
     # cal_wet_to_dry = ['McLaughlin NRS',
@@ -398,23 +406,26 @@ if __name__ == "__main__":
     else:
         all_vars = pd.read_csv('./monthly_vals.txt')
 
-    # all_vars = all_vars.loc[all_vars['loc'] != "Mammoth Lakes", :].copy()
-    sys.stdout.write('plotting ')
-    for v in (h1vars + h2vars):  # ('FPSN', ):
-        sys.stdout.write('{} '.format(v))
+    if False:
+        # all_vars = all_vars.loc[all_vars['loc'] != "Mammoth Lakes", :].copy()
+        sys.stdout.write('plotting ')
+        for v in (h1vars + h2vars):  # ('FPSN', ):
+            sys.stdout.write('{} '.format(v))
+            sys.stdout.flush()
+            df = all_vars[all_vars['var'] == v]
+            mon_diff, ann_diff = calc_dvar(all_vars, v)
+            ann_diff = ann_diff.reindex([x.name for x in cal_locs])
+            if v != "FPSN":
+                ann_diff = None
+            plot_CLM_variable(df, v, ann_diff,
+                              [s.name for s in cal_wet_to_dry])
+        sys.stdout.write('\n')
         sys.stdout.flush()
-        df = all_vars[all_vars['var'] == v]
-        mon_diff, ann_diff = calc_dvar(all_vars, v)
-        ann_diff = ann_diff.reindex([x.name for x in cal_locs])
-        if v != "FPSN":
-            ann_diff = None
-        plot_CLM_variable(df, v, ann_diff,
-                          [s.name for s in cal_wet_to_dry])
-    sys.stdout.write('\n')
-    sys.stdout.flush()
 
+    order = ['McLaughlin', 'Sierra Foothill', 'Younger Lagoon',
+             'Sedgwick', 'Loma Ridge', 'Box Springs', 'Mammoth Lakes']
     site_data, anntot_long = plot_site_annual_rain_gpp(
-        all_vars, [s.name for s in cal_wet_to_dry])
+        all_vars, order)
 
     # fpsn = all_vars.ix[all_vars['var'] == 'FPSN']
     # ndays = map(lambda x: calendar.monthrange(2001, x)[1],
