@@ -69,9 +69,9 @@ class WorldCalMap(object):
         self.figsize = figsize
         self.interp = interp
 
-        self.fig = plt.figure(figsize=(12, 6))
+        self.fig = plt.figure(figsize=(12, 8))
         self.ax1 = plt.subplot2grid((60, 110), (0, 0), colspan=50, rowspan=50)
-        self.ax2 = plt.subplot2grid((60, 110), (0, 53), colspan=50, rowspan=50)
+        self.ax2 = plt.subplot2grid((60, 110), (0, 53), colspan=55, rowspan=50)
         self.ax3 = plt.subplot2grid((60, 110), (52, 4),
                                     colspan=90, rowspan=10)
 
