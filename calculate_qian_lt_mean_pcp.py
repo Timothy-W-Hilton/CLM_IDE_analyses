@@ -30,7 +30,7 @@ def qian_ltmean_pcp_ncdf(outfile, qd):
     latvar.units = 'deg N'
     lonvar[:] = qd.dlon[...]
     lonvar.units = 'deg E'
-    pcpvar[:] = qd.data.mean(axis=0)
+    pcpvar[:] = np.mean(qd.data, axis=0)
     pcpvar.units = 'mm yr-1'
     pcpvar.description = (
         'Qian et al (2006) 1948-2004 long-term mean precipitation.\n'
@@ -43,31 +43,33 @@ def qian_ltmean_pcp_ncdf(outfile, qd):
 if __name__ == "__main__":
     qd = get_f05g16_pcp(interp_flag=False)
     qdi = get_f05g16_pcp(interp_flag=True)
-    qian_ltmean_pcp_ncdf('test.nc', qdi)
+    qian_ltmean_pcp_ncdf('qian_ann_mean_pcp.nc', qdi)
 
-    # --- plotting code below ---
-    vmax = np.max((qdi.data.max(), qd.data.max()))
-    plt.imshow(qd.data[0, ...],
-               cmap='Blues',
-               vmax=vmax)
-    plt.colorbar()
-    plt.figure()
-    plt.imshow(qdi.data[0, ...], cmap='Blues', vmax=vmax)
-    plt.colorbar()
+    draw_plot = False
+    if draw_plot:
+        # --- plotting code below ---
+        vmax = np.max((qdi.data.max(), qd.data.max()))
+        plt.imshow(qd.data[0, ...],
+                   cmap='Blues',
+                   vmax=vmax)
+        plt.colorbar()
+        plt.figure()
+        plt.imshow(qdi.data[0, ...], cmap='Blues', vmax=vmax)
+        plt.colorbar()
 
-    plt.figure()
-    m = Basemap()
-    m.pcolormesh(qdi.dlon, qdi.dlat,
-                 qdi.data.mean(axis=0),
-                 cmap='Blues',
-                 vmax=vmax,
-                 latlon=True)
-    m.drawcoastlines()
-    plt.colorbar()
+        plt.figure()
+        m = Basemap()
+        m.pcolormesh(qdi.dlon, qdi.dlat,
+                     qdi.data.mean(axis=0),
+                     cmap='Blues',
+                     vmax=vmax,
+                     latlon=True)
+        m.drawcoastlines()
+        plt.colorbar()
 
-    qds = qd.data.sum(axis=(1, 2))
-    qdis = qdi.data.sum(axis=(1, 2))
-    plt.figure()
-    # plt.pcolormesh(np.stack((qds, qdis)).transpose(), cmap='RdBu')
-    plt.pcolormesh((qds / qdis)[:, np.newaxis], cmap='RdBu')
-    plt.colorbar()
+        qds = qd.data.sum(axis=(1, 2))
+        qdis = qdi.data.sum(axis=(1, 2))
+        plt.figure()
+        # plt.pcolormesh(np.stack((qds, qdis)).transpose(), cmap='RdBu')
+        plt.pcolormesh((qds / qdis)[:, np.newaxis], cmap='RdBu')
+        plt.colorbar()
