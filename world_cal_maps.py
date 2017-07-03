@@ -117,6 +117,17 @@ class WorldCalMap(object):
                                      latlon=True)
         # draw california map boundary box on world map
 
+        self.ax1.annotate(s="(a)",
+                          xy=(0.01, 0.95),
+                          xycoords='figure fraction',
+                          xytext=(0.01, 0.95),
+                          textcoords='figure fraction')
+        self.ax2.annotate(s="(b)",
+                          xy=(0.45, 0.95),
+                          xycoords='figure fraction',
+                          xytext=(0.475, 0.95),
+                          textcoords='figure fraction')
+
         if locations is not None:
             try:
                 label_offsets = site_label_offsets()
@@ -131,7 +142,6 @@ class WorldCalMap(object):
                                                        here.lat[0]),
                         )
                     elif site_labels is "names":
-
                         self.ax2.annotate(
                             s=here.name,
                             textcoords='offset points',
