@@ -80,7 +80,7 @@ if __name__ == "__main__":
                             ' [$\mu$mol m$^{-2}$ s$^{-1}$]'),
                  locations=locs,
                  site_labels="names")
-    wcm_mag.label_crop_save('FPSN_Delta_ann_max.png')
+    wcm_mag.crop_save('FPSN_Delta_ann_max.png')
 
     wcm_mag_pct = WorldCalMap()
     wcm_mag_pct.plot(data=d_mag_pct,
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                                 ' (controll to drought) [percent]'),
                      locations=locs,
                      site_labels="names")
-    wcm_mag_pct.label_crop_save('FPSN_PctDelta_ann_max.png')
+    wcm_mag_pct.crop_save('FPSN_PctDelta_ann_max.png')
 
     wcm_doy = WorldCalMap()
     wcm_doy.plot(data=d_doy,
@@ -109,4 +109,4 @@ if __name__ == "__main__":
                             '(control to drought) [days]'),
                  locations=locs,
                  site_labels="names")
-    wcm_doy.label_crop_save('FPSN_DeltaDOY_ann_max.png')
+    wcm_doy.crop_save('FPSN_DeltaDOY_ann_max.png')
