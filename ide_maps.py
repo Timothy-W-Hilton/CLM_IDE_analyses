@@ -43,8 +43,9 @@ def define_colormap():
                                     0.49296426,  1.0]),
                           np.array([0.00322953,  0.37093426,
                                     0.33679355,  1.0])]
-    # make the [0.8, 1.0] band red
-    my_cmap.colors[4] = np.array((1.0, 0.0, 0.0))
+    # make the [0.8, 1.0] band magenta
+    my_cmap.colors[4] = np.array((255.0, 0.0, 255.0)) / 255.0
+
     return my_cmap, my_norm
 
 
@@ -81,7 +82,8 @@ if __name__ == "__main__":
              cbar_tstr=(u'(annual pcp at GPP\u2013pcp slope change) / '
                         u'(1948\u20132004 annual mean pcp)'),
              cmap_arg=my_cmap,
-             locations=locs)
+             locations=locs,
+             site_labels='names')
     print "drew maps"
-    wcm.label_crop_save("PCP_GPP_ratio_map.png")
+    wcm.crop_save("PCP_GPP_ratio_map.png")
     print "overlaid labels, etc."
