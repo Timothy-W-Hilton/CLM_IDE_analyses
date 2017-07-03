@@ -9,6 +9,25 @@ from mpl_toolkits.basemap import Basemap
 from timutils import midpt_norm
 
 
+class site_label_offsets(dict):
+    def __init__(self):
+        self.offset = {'Sierra Foothill': (5, 5),
+                       'McLaughlin': (5, -10),
+                       'Younger Lagoon': (5, -10),
+                       'Loma Ridge': (-85, -12),
+                       'Sedgwick': (-72, -10),
+                       'Box Springs': (5, 2),
+                       'SNARL': (5, 2),
+                       'Carrizo Plain': (5, 2)}
+
+    def get_offset(self, sitename):
+        try:
+            offset = self.offset[sitename]
+        except KeyError:
+            offset = (0, 0)
+        return offset
+
+
 def setup_calmap(ax):
     """basic map of California with parallels, meridians, coastlines
     """
@@ -100,6 +119,7 @@ class WorldCalMap(object):
 
         if locations is not None:
             try:
+                label_offsets = site_label_offsets()
                 for here in locations:
                     pt = self.mcal.scatter(here.lon[0], here.lat[0],
                                            latlon=True,
@@ -108,11 +128,16 @@ class WorldCalMap(object):
                         self.ax2.annotate(s="{:0.2f}".format(data[here.clm_y,
                                                                   here.clm_x]),
                                           xy=self.mcal(here.lon[0],
-                                                       here.lat[0]))
+                                                       here.lat[0]),
+                        )
                     elif site_labels is "names":
-                        self.ax2.annotate(s=here.name,
-                                          xy=self.mcal(here.lon[0],
-                                                       here.lat[0]))
+
+                        self.ax2.annotate(
+                            s=here.name,
+                            textcoords='offset points',
+                            xytext=label_offsets.get_offset(here.name),
+                            xy=self.mcal(here.lon[0],
+                                         here.lat[0]))
             except IndexError:
                 print('{sitename}: clm_x or clm_y'
                       ' exceeds domain bounds'.format(
@@ -130,28 +155,3 @@ class WorldCalMap(object):
         #                  'IDE_pct_map_interp{}.png'.format(
         #                      self.lat.size != self.dlat.size)))
         # plt.close(self.fig)
-
-    def label_crop_save(self, fname_image, fname_labels=None, dpi=(300, 300)):
-        """overlay site name labels, crop out whitespace
-
-        fname_labels (str): full path to png image containing labels
-            (default is ./site_labels.png'
-        """
-
-        if fname_labels is None:
-            fname_labels = './site_labels.png'
-
-        self.fig.savefig('tmp.png')
-
-        map_image = Image.open("tmp.png")
-        labels_image = Image.open(fname_labels)
-        final_image = Image.new("RGBA", map_image.size)
-        # 1080, 576, 11, 14
-        # left upper right lower
-        final_image = Image.alpha_composite(final_image, map_image)
-        final_image = Image.alpha_composite(final_image, labels_image)
-        final_image = final_image.crop((0, 13, 1075, 587))
-        final_image.save(fname_image, dpi=dpi)
-        map_image.close()
-        labels_image.close()
-        os.remove("tmp.png")

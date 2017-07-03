@@ -37,6 +37,7 @@ from clm_domain import CLM_Domain
 from IDE_locations import CLMf05g16_get_spatial_info
 from world_cal_maps import WorldCalMap
 
+
 class CalMask(object):
     """mask to determine if a lat/lon points are within California
     """
@@ -236,11 +237,10 @@ class QianMonthlyPCPData(object):
                  locations=locations,
                  cbar_tstr=((u'drought simulation precipitation as fraction '
                              u'of 1948\u20132004 annual mean precipitation')),
-                 site_labels=site_labels)
-        wcm.label_crop_save(
-            os.path.join(os.getenv('HOME'), 'plots', 'maptest',
-                             'IDE_pct_map_interp{}.png'.format(
-                             self.lat.size != self.dlat.size)))
+                 site_labels="names")
+        wcm.fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
+                                     'IDE_pct_map_interp{}.png'.format(
+                                         self.lat.size != self.dlat.size)))
         plt.close(wcm.fig)
 
     def recycle_data(self, yearstart, yearend):
