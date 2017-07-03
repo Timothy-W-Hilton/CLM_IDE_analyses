@@ -69,11 +69,11 @@ class WorldCalMap(object):
         self.figsize = figsize
         self.interp = interp
 
-        self.fig = plt.figure(figsize=(12, 8))
+        self.fig = plt.figure(figsize=(12, 6))
         self.ax1 = plt.subplot2grid((60, 110), (0, 0), colspan=50, rowspan=50)
-        self.ax2 = plt.subplot2grid((60, 110), (0, 53), colspan=55, rowspan=50)
+        self.ax2 = plt.subplot2grid((60, 110), (0, 51), colspan=50, rowspan=50)
         self.ax3 = plt.subplot2grid((60, 110), (52, 4),
-                                    colspan=90, rowspan=10)
+                                    colspan=85, rowspan=10)
 
         self.mworld = setup_worldmap(self.ax1)
         self.mcal = setup_calmap(self.ax2)
@@ -155,3 +155,15 @@ class WorldCalMap(object):
         #                  'IDE_pct_map_interp{}.png'.format(
         #                      self.lat.size != self.dlat.size)))
         # plt.close(self.fig)
+
+    def crop_save(self, fname_image, dpi=(300, 300)):
+        """crop out whitespace, save image at 300 DPI
+        """
+        self.fig.savefig('tmp.png')
+        map_image = Image.open("tmp.png")
+        # 1080, 576, 11, 14
+        # left upper right lower
+        map_image = map_image.crop((0, 13, 1020, 587))
+        map_image.save(fname_image, dpi=dpi)
+        map_image.close()
+        os.remove("tmp.png")

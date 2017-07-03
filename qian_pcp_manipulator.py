@@ -238,9 +238,9 @@ class QianMonthlyPCPData(object):
                  cbar_tstr=((u'drought simulation precipitation as fraction '
                              u'of 1948\u20132004 annual mean precipitation')),
                  site_labels="names")
-        wcm.fig.savefig(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
-                                     'IDE_pct_map_interp{}.png'.format(
-                                         self.lat.size != self.dlat.size)))
+        wcm.crop_save(os.path.join(os.getenv('HOME'), 'plots', 'maptest',
+                                   'IDE_pct_map_interp{}.png'.format(
+                                       self.lat.size != self.dlat.size)))
         plt.close(wcm.fig)
 
     def recycle_data(self, yearstart, yearend):
