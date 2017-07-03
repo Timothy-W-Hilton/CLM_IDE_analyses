@@ -36,6 +36,7 @@ sitenames_reorder_factor <- function(f) {
         "ARM Southern Great Plains"="ARM S. Great Plains",
         "McLaughlin NRS"="McLaughlin",
         "Sedgewick NRS"="Sedgwick",
+        "Mammoth Lakes"="SNARL",
         .default=levels(f))
     f <- factor(f, levels=c("Harvard Forest",
                             "ARM S. Great Plains",
@@ -46,7 +47,7 @@ sitenames_reorder_factor <- function(f) {
                             "Box Springs",
                             "Loma Ridge",
                             "Sedgwick",
-                            "Mammoth Lakes",
+                            "SNARL",
                             "Carrizo Plain"))
     return(f)
     }
@@ -130,7 +131,8 @@ plotter <- function(s,
         geom_line(aes(y = val, linetype=case)) +
         theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
         ylim(plot_min, plot_max) + ## BTRAN varies in [0.0, 1.0]
-        facet_wrap(~ loc, ncol=3 )
+        facet_wrap(~ loc, ncol=3 ) +
+        theme(legend.position=c(0.8, 0.1)) ## http://www.cookbook-r.com/Graphs/Legends <- (ggplot2)/
     fname <- paste(varname, '_daily_sites.pdf', sep='')
     cat(paste('saving', fname, '...'))
     ggsave(filename=fname)
@@ -138,7 +140,7 @@ plotter <- function(s,
     return(s)
 }
 
-do_bootstrap <- TRUE
+do_bootstrap <- FALSE
 if (do_bootstrap) {
     s_btran <- bootstrapper('BTRAN')
     s_FPSN <- bootstrapper('FPSN')
@@ -152,8 +154,8 @@ s_per_day <- 24*60*60
 btran <- plotter(s_btran, 'BTRAN', plot_min=0.0, plot_max=1.0)
 fpsn <- plotter(s_FPSN, 'FPSN', units='(umol/m2/s)')
 
-rain <- plotter(s_rain, 'RAIN', plot_min=0.0, units='(mm/d)',
-                units_factor=s_per_day)
-wt <- plotter(s_wt, 'WT', plot_min=0.0, units='(mm)')
-h2osoi_lev1 <- plotter(s_h2osoi_lev1, 'H2OSOIlev0', units='(mm3/mm3)')
-h2osoi_sum <- plotter(h2osoi_sum, 'H2OSOIsum', units='(mm3/mm3)')
+## rain <- plotter(s_rain, 'RAIN', plot_min=0.0, units='(mm/d)',
+##                 units_factor=s_per_day)
+## wt <- plotter(s_wt, 'WT', plot_min=0.0, units='(mm)')
+## h2osoi_lev1 <- plotter(s_h2osoi_lev1, 'H2OSOIlev0', units='(mm3/mm3)')
+## h2osoi_sum <- plotter(h2osoi_sum, 'H2OSOIsum', units='(mm3/mm3)')
