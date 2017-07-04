@@ -31,20 +31,23 @@ sitenames_reorder_factor <- function(f) {
     ## group sites geographically rather than alphabetically
     f <- recode(
         f,
-        "Sierra Foothill Research Extension Center"="Sierra Foothill REC",
-        "Loma Ridge Global Change Experiment"="Loma Ridge GCE",
+        "Sierra Foothill Research Extension Center"="Sierra Foothill",
+        "Loma Ridge Global Change Experiment"="Loma Ridge",
         "ARM Southern Great Plains"="ARM S. Great Plains",
+        "McLaughlin NRS"="McLaughlin",
+        "Sedgewick NRS"="Sedgwick",
+        "Mammoth Lakes"="SNARL",
         .default=levels(f))
     f <- factor(f, levels=c("Harvard Forest",
                             "ARM S. Great Plains",
                             "WLEF",
-                            "Sierra Foothill REC",
-                            "McLaughlin NRS",
+                            "Sierra Foothill",
+                            "McLaughlin",
                             "Younger Lagoon",
                             "Box Springs",
-                            "Loma Ridge GCE",
-                            "Sedgewick NRS",
-                            "Mammoth Lakes",
+                            "Loma Ridge",
+                            "Sedgwick",
+                            "SNARL",
                             "Carrizo Plain"))
     return(f)
     }
@@ -60,27 +63,7 @@ calc_annual_difference <- function(df, units_factor=1.0) {
     return(ann_diff)
 }
 
-plotter <- function(varname,
-                    plot_min=NA, plot_max=NA,
-                    units="", units_factor=1.0) {
-    ## plot daily CLM variable with 95% CI envelope, one panel per site
-    ##
-    ## ARGS:
-    ##  varname (string): name of variable to be plotted
-    ##  plot_min (float): vertical axis minimum (default is min(95%
-    ##      confidence interval)
-    ##  plot_max (float): vertical axis maximum (default is max(95%
-    ##      confidence interval)
-    ##  units (string): units, to be appended to vertical axis label
-    ##  units_factor (float): units conversion factor to be multiplied
-    ##      into requested variable.  Default is 1.0.
-    ##
-    ## RETURNS:
-    ##  data frame containing daily values, labeled by site
-
-    ## TODO: min, max vals should be arguments
-    ## TODO: where to put scale factor?  Argument here, or in shell
-    ## script that builds daily netcdf files?
+bootstrapper <- function(varname, units_factor=1.0) {
     fname_csv_base <- paste(varname, '_daily_all.csv.gz', sep='')
     df <- read.csv(file.path('/', 'global', 'cscratch1', 'sd',
                              'twhilton', 'daily_CLM_output', 'output',
@@ -100,6 +83,44 @@ plotter <- function(varname,
                    minval=min(value),
                    maxval=max(value),
                    ci=list(boot_5_95(value, R=ibootstrap)))
+    return(s)
+}
+
+vert_axis_label_builder <- function(varname, units) {
+    ## build axis label for vertical axis
+    if (varname == 'FPSN') {
+        return(parse(text='GPP~(gC~m^-2~d^-1)'))
+    } else if (varname == 'BTRAN') {
+        return(parse(text='beta[t]'))
+    } else {
+        return(paste(varname, units))
+    }
+}
+
+plotter <- function(s,
+                    varname,
+                    plot_min=NA, plot_max=NA,
+                    units="", units_factor=1.0) {
+    ## plot daily CLM variable with 95% CI envelope, one panel per site
+    ##
+    ## ARGS:
+    ##  s: summary of bootstrap returned by bootstrapper()
+    ##  varname (string): name of variable to be plotted
+    ##  plot_min (float): vertical axis minimum (default is min(95%
+    ##      confidence interval)
+    ##  plot_max (float): vertical axis maximum (default is max(95%
+    ##      confidence interval)
+    ##  units (string): units, to be appended to vertical axis label
+    ##  units_factor (float): units conversion factor to be multiplied
+    ##      into requested variable.  Default is 1.0.
+    ##
+    ## RETURNS:
+    ##  data frame containing daily values, labeled by site
+
+    ## TODO: min, max vals should be arguments
+    ## TODO: where to put scale factor?  Argument here, or in shell
+    ## script that builds daily netcdf files?
+
     s[['cilo']] <- unlist(lapply(s[['ci']], function(x) x[['cilo']]))
     s[['cilo']][s[['cilo']] < plot_min] <- plot_min
     s[['cihi']] <- unlist(lapply(s[['ci']], function(x) x[['cihi']]))
@@ -117,16 +138,14 @@ plotter <- function(varname,
     ann_diff[['label']] <- paste0('Delta==', round(ann_diff[['d']]),
                                  '~', units)
     h <- ggplot(s, aes(doy, val, group=case)) +
-        labs(y=paste(varname, ' (', units, ')', sep='')) +
+        labs(y=vert_axis_label_builder(varname, units), x='Day of Year') +
         geom_ribbon(aes(ymin = cilo, ymax = cihi, linetype=case),
                     fill="grey50", alpha=0.4) +
         geom_line(aes(y = val, linetype=case)) +
         theme_few() +  ## https://www.r-bloggers.com/ggplot2-themes-examples/
         ylim(plot_min, plot_max) + ## BTRAN varies in [0.0, 1.0]
         facet_wrap(~ loc, ncol=3 ) +
-        geom_text(data=ann_diff,
-                  aes(x=100, y=plot_max * 0.9, label=label, group=NULL),
-                  parse=TRUE)
+        theme(legend.position=c(0.8, 0.1)) ## http://www.cookbook-r.com/Graphs/Legends <- (ggplot2)/
     fname <- paste(varname, '_daily_sites.pdf', sep='')
     cat(paste('saving', fname, '...'))
     ggsave(filename=fname)
@@ -134,10 +153,29 @@ plotter <- function(varname,
     return(list(annsum=s, anndiff=ann_diff))
 }
 
+do_bootstrap <- FALSE
+if (do_bootstrap) {
+    s_btran <- bootstrapper('BTRAN')
+    s_FPSN <- bootstrapper('FPSN')
+    s_rain <- bootstrapper('RAIN')
+    s_wt <- bootstrapper('WT')
+    s_h2osoi_lev1 <- bootstrapper('H2OSOIlev00')
+    h2osoi_sum <- bootstrapper('H2OSOIsum')
+}
+
 s_per_day <- 24*60*60
-rain <- plotter('RAIN', plot_min=0.0, units='mm', units_factor=s_per_day)
-## btran <- plotter('BTRAN', plot_min=0.0, plot_max=1.0)
-## wt <- plotter('WT', plot_min=0.0, units='mm')
-## fpsn <- plotter('FPSN', units='umol/m2/s')
-## h2osoi_lev1 <- plotter('H2OSOIlev0', units='mm3/mm3')
-## h2osoi_sum <- plotter('H2OSOIsum', units='mm3/mm3')
+mw_C <- 12.0107
+umol_per_mol <- 1e-6
+umol_m2_s_2_gC_m2_d <- s_per_day * mw_C * umol_per_mol
+
+btran <- plotter(s_btran, 'BTRAN', plot_min=0.0, plot_max=1.0)
+fpsn <- plotter(s_FPSN,
+                'FPSN',
+                units_factor=umol_m2_s_to_gC_m2_d,
+                units='(gC/m2/d)')
+
+rain <- plotter(s_rain, 'RAIN', plot_min=0.0, units='(mm/d)',
+                units_factor=s_per_day)
+wt <- plotter(s_wt, 'WT', plot_min=0.0, units='(mm)')
+h2osoi_lev1 <- plotter(s_h2osoi_lev1, 'H2OSOIlev0', units='(mm3/mm3)')
+h2osoi_sum <- plotter(h2osoi_sum, 'H2OSOIsum', units='(mm3/mm3)')
