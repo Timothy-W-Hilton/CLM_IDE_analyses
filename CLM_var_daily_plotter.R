@@ -79,7 +79,7 @@ bootstrapper <- function(varname, units_factor=1.0) {
 vert_axis_label_builder <- function(varname, units) {
     ## build axis label for vertical axis
     if (varname == 'FPSN') {
-        return(parse(text='GPP~(mu*mol~m^-2~s^-1)'))
+        return(parse(text='GPP~(gC~m^-2~d^-1)'))
     } else if (varname == 'BTRAN') {
         return(parse(text='beta[t]'))
     } else {
@@ -151,11 +151,18 @@ if (do_bootstrap) {
 }
 
 s_per_day <- 24*60*60
-btran <- plotter(s_btran, 'BTRAN', plot_min=0.0, plot_max=1.0)
-fpsn <- plotter(s_FPSN, 'FPSN', units='(umol/m2/s)')
+mw_C <- 12.0107
+umol_per_mol <- 1e-6
+umol_m2_s_2_gC_m2_d <- s_per_day * mw_C * umol_per_mol
 
-## rain <- plotter(s_rain, 'RAIN', plot_min=0.0, units='(mm/d)',
-##                 units_factor=s_per_day)
-## wt <- plotter(s_wt, 'WT', plot_min=0.0, units='(mm)')
-## h2osoi_lev1 <- plotter(s_h2osoi_lev1, 'H2OSOIlev0', units='(mm3/mm3)')
-## h2osoi_sum <- plotter(h2osoi_sum, 'H2OSOIsum', units='(mm3/mm3)')
+btran <- plotter(s_btran, 'BTRAN', plot_min=0.0, plot_max=1.0)
+fpsn <- plotter(s_FPSN,
+                'FPSN',
+                units_factor=umol_m2_s_to_gC_m2_d,
+                units='(gC/m2/d)')
+
+rain <- plotter(s_rain, 'RAIN', plot_min=0.0, units='(mm/d)',
+                units_factor=s_per_day)
+wt <- plotter(s_wt, 'WT', plot_min=0.0, units='(mm)')
+h2osoi_lev1 <- plotter(s_h2osoi_lev1, 'H2OSOIlev0', units='(mm3/mm3)')
+h2osoi_sum <- plotter(h2osoi_sum, 'H2OSOIsum', units='(mm3/mm3)')
