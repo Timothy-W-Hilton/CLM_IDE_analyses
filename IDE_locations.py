@@ -13,19 +13,19 @@ def CLMf05g16_get_spatial_info():
                                              'CLM_f05_g16.clm2.h0.0051-09.nc'))
     santacruz = Location((-122.03089741, ), (36.9741, ), 'Younger Lagoon')
     santacruz.get_clm_xy(domain_f05_g16)
-    mclaughlin = Location((-122.431667, ), (38.873889, ), 'McLaughlin NRS')
+    mclaughlin = Location((-122.431667, ), (38.873889, ), 'McLaughlin')
     mclaughlin.get_clm_xy(domain_f05_g16)
     sierra_foothills = Location((-121.311623, ), (39.249407, ),
-                                'Sierra Foothill R.E.C.')
+                                'Sierra Foothill')
     sierra_foothills.get_clm_xy(domain_f05_g16)
     loma_ridge = Location((-117.7, ), (33.74, ),
-                          'Loma Ridge G.C.E.')
+                          'Loma Ridge')
     loma_ridge.get_clm_xy(domain_f05_g16)
     ARM_SGP = Location((-97.4888, ), (36.6058, ),
                        'ARM Southern Great Plains')
     ARM_SGP.get_clm_xy(domain_f05_g16)
     # coordinates from https://en.wikipedia.org/wiki/Sedgwick_Reserve
-    sedgewick = Location((-120.016667, ), (34.7, ), 'Sedgewick NRS')
+    sedgewick = Location((-120.016667, ), (34.7, ), 'Sedgwick')
     sedgewick.get_clm_xy(domain_f05_g16)
     # Box Springs coordinates from http://www.gps-coordinates.net
     # using the description on the NRS website: "Riverside County,
@@ -35,7 +35,7 @@ def CLMf05g16_get_spatial_info():
     boxsprings = Location((-117.303321, ), (33.98472, ), 'Box Springs')
     boxsprings.get_clm_xy(domain_f05_g16)
     #http://www.findlatitudeandlongitude.com/?loc=+mammoth+lakes%2C+california#.WBN35neZMo9
-    mammoth_lakes = Location((-118.972079, ), (37.648546, ), 'Mammoth Lakes')
+    mammoth_lakes = Location((-118.972079, ), (37.648546, ), 'SNARL')
     mammoth_lakes.get_clm_xy(domain_f05_g16)
     # coordinates from http://atmos.seas.harvard.edu/lab/hf/hfsite.html
     harvard = Location((-72.171478, ), (42.537755, ), 'Harvard Forest')

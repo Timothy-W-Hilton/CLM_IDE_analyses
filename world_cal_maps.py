@@ -2,9 +2,31 @@ import sys
 import os
 import numpy as np
 from numpy import ma
+from PIL import Image  # to overlay site labels, crop
+import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 from timutils import midpt_norm
+
+
+class site_label_offsets(dict):
+    def __init__(self):
+        self.offset = {'Sierra Foothill': (5, 5),
+                       'McLaughlin': (5, -10),
+                       'Younger Lagoon': (5, -10),
+                       'Loma Ridge': (-85, -12),
+                       'Sedgwick': (-72, -10),
+                       'Box Springs': (5, 2),
+                       'SNARL': (5, 2),
+                       'Carrizo Plain': (5, 2)}
+
+    def get_offset(self, sitename):
+        try:
+            offset = self.offset[sitename]
+        except KeyError:
+            offset = (0, 0)
+        return offset
+
 
 def setup_calmap(ax):
     """basic map of California with parallels, meridians, coastlines
@@ -43,14 +65,15 @@ class WorldCalMap(object):
     def __init__(self, figsize=(12, 6), interp=False):
         """class constructor
         """
+        matplotlib.rcParams.update({'font.size': 14})
         self.figsize = figsize
         self.interp = interp
 
         self.fig = plt.figure(figsize=(12, 6))
         self.ax1 = plt.subplot2grid((60, 110), (0, 0), colspan=50, rowspan=50)
-        self.ax2 = plt.subplot2grid((60, 110), (0, 53), colspan=50, rowspan=50)
-        self.ax3 = plt.subplot2grid((60, 110), (52, 0),
-                                    colspan=100, rowspan=10)
+        self.ax2 = plt.subplot2grid((60, 110), (0, 51), colspan=50, rowspan=50)
+        self.ax3 = plt.subplot2grid((60, 110), (52, 4),
+                                    colspan=85, rowspan=10)
 
         self.mworld = setup_worldmap(self.ax1)
         self.mcal = setup_calmap(self.ax2)
@@ -94,8 +117,20 @@ class WorldCalMap(object):
                                      latlon=True)
         # draw california map boundary box on world map
 
+        self.ax1.annotate(s="(a)",
+                          xy=(0.01, 0.95),
+                          xycoords='figure fraction',
+                          xytext=(0.01, 0.95),
+                          textcoords='figure fraction')
+        self.ax2.annotate(s="(b)",
+                          xy=(0.45, 0.95),
+                          xycoords='figure fraction',
+                          xytext=(0.475, 0.95),
+                          textcoords='figure fraction')
+
         if locations is not None:
             try:
+                label_offsets = site_label_offsets()
                 for here in locations:
                     pt = self.mcal.scatter(here.lon[0], here.lat[0],
                                            latlon=True,
@@ -104,11 +139,15 @@ class WorldCalMap(object):
                         self.ax2.annotate(s="{:0.2f}".format(data[here.clm_y,
                                                                   here.clm_x]),
                                           xy=self.mcal(here.lon[0],
-                                                       here.lat[0]))
+                                                       here.lat[0]),
+                        )
                     elif site_labels is "names":
-                        self.ax2.annotate(s=here.name,
-                                          xy=self.mcal(here.lon[0],
-                                                       here.lat[0]))
+                        self.ax2.annotate(
+                            s=here.name,
+                            textcoords='offset points',
+                            xytext=label_offsets.get_offset(here.name),
+                            xy=self.mcal(here.lon[0],
+                                         here.lat[0]))
             except IndexError:
                 print('{sitename}: clm_x or clm_y'
                       ' exceeds domain bounds'.format(
@@ -126,3 +165,15 @@ class WorldCalMap(object):
         #                  'IDE_pct_map_interp{}.png'.format(
         #                      self.lat.size != self.dlat.size)))
         # plt.close(self.fig)
+
+    def crop_save(self, fname_image, dpi=(300, 300)):
+        """crop out whitespace, save image at 300 DPI
+        """
+        self.fig.savefig('tmp.png')
+        map_image = Image.open("tmp.png")
+        # 1080, 576, 11, 14
+        # left upper right lower
+        map_image = map_image.crop((0, 13, 1020, 587))
+        map_image.save(fname_image, dpi=dpi)
+        map_image.close()
+        os.remove("tmp.png")
