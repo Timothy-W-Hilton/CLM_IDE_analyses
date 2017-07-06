@@ -1,6 +1,7 @@
 library(ggplot2)
 library(ggthemes)
 library(dplyr)
+library(tidyr)
 library(boot)
 
 DEBUGFLAG <- TRUE
@@ -148,19 +149,19 @@ plotter <- function(s,
         theme(legend.position=c(0.8, 0.1)) ## http://www.cookbook-r.com/Graphs/Legends <- (ggplot2)/
     fname <- paste(varname, '_daily_sites.pdf', sep='')
     cat(paste('saving', fname, '...'))
-    ggsave(filename=fname)
-    cat('done\n')
+    ggsave(filename=fname, device=cairo_pdf)
+    cat('embedding fonts\n')
     return(list(annsum=s, anndiff=ann_diff))
 }
 
-do_bootstrap <- FALSE
+do_bootstrap <- TRUE
 if (do_bootstrap) {
     s_btran <- bootstrapper('BTRAN')
     s_FPSN <- bootstrapper('FPSN')
-    s_rain <- bootstrapper('RAIN')
-    s_wt <- bootstrapper('WT')
-    s_h2osoi_lev1 <- bootstrapper('H2OSOIlev00')
-    h2osoi_sum <- bootstrapper('H2OSOIsum')
+    ## s_rain <- bootstrapper('RAIN')
+    ## s_wt <- bootstrapper('WT')
+    ## s_h2osoi_lev1 <- bootstrapper('H2OSOIlev00')
+    ## h2osoi_sum <- bootstrapper('H2OSOIsum')
 }
 
 s_per_day <- 24*60*60
@@ -174,8 +175,8 @@ fpsn <- plotter(s_FPSN,
                 units_factor=umol_m2_s_to_gC_m2_d,
                 units='(gC/m2/d)')
 
-rain <- plotter(s_rain, 'RAIN', plot_min=0.0, units='(mm/d)',
-                units_factor=s_per_day)
-wt <- plotter(s_wt, 'WT', plot_min=0.0, units='(mm)')
-h2osoi_lev1 <- plotter(s_h2osoi_lev1, 'H2OSOIlev0', units='(mm3/mm3)')
-h2osoi_sum <- plotter(h2osoi_sum, 'H2OSOIsum', units='(mm3/mm3)')
+## rain <- plotter(s_rain, 'RAIN', plot_min=0.0, units='(mm/d)',
+##                 units_factor=s_per_day)
+## wt <- plotter(s_wt, 'WT', plot_min=0.0, units='(mm)')
+## h2osoi_lev1 <- plotter(s_h2osoi_lev1, 'H2OSOIlev0', units='(mm3/mm3)')
+## h2osoi_sum <- plotter(h2osoi_sum, 'H2OSOIsum', units='(mm3/mm3)')
